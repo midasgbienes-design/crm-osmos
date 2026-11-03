@@ -1,0 +1,38 @@
+@import url("https://fonts.googleapis.com/css2?family=Michroma&family=Barlow:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #f3f5f9;
+  color: #1b2a4a;
+  font-family: "Barlow", system-ui, sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-osmos-line bg-white;
+  }
+  .btn {
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 text-sm font-bold transition-colors disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-osmos-navy text-white hover:bg-osmos-navy2;
+  }
+  .btn-secondary {
+    @apply btn border border-[#B8C4DD] bg-white text-osmos-navy hover:bg-osmos-hover;
+  }
+  .input {
+    @apply h-9 w-full rounded-md border border-[#D5DCEA] bg-white px-3 text-sm outline-none focus:border-osmos-teal focus:ring-2 focus:ring-osmos-teal/20;
+  }
+  .label {
+    @apply mb-1 block text-xs font-semibold text-osmos-muted;
+  }
+  .th {
+    @apply whitespace-nowrap border-b border-osmos-line px-3.5 py-2.5 text-left text-xs font-bold text-osmos-muted;
+  }
+  .td {
+    @apply whitespace-nowrap border-b border-osmos-soft px-3.5 py-2.5;
+  }
+}
