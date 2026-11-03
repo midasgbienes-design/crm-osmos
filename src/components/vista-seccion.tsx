@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buscarModulo, rutaSeccion } from "@/lib/modulos";
@@ -33,12 +34,17 @@ export async function VistaSeccion({
         titulo={s.nombre}
         descripcion={s.descripcion ?? m.descripcion}
       >
+        {s.nuevo ? (
+          <Link href={s.nuevo.href} className="btn-primary">
+            {s.nuevo.etiqueta}
+          </Link>
+        ) : null}
         {s.acciones?.map((a) => (
           <form key={a.rpc} action={ejecutarAccion}>
             <input type="hidden" name="modulo" value={m.slug} />
             <input type="hidden" name="seccion" value={s.slug} />
             <input type="hidden" name="rpc" value={a.rpc} />
-            <button type="submit" className="btn-primary">
+            <button type="submit" className={s.nuevo ? "btn-secondary" : "btn-primary"}>
               {a.etiqueta}
             </button>
           </form>

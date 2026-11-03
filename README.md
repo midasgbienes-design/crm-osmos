@@ -22,6 +22,7 @@ En el proyecto de Supabase (`https://oshmqvbvwlvjsecyoxaw.supabase.co`):
    3. `20261103000300_permisos.sql`
    4. `20261103000400_datos_base.sql`
    5. `20261103000500_codigos_automaticos.sql`
+   6. `20261103000600_fase2_cotizaciones_y_servicio.sql`
 3. *(Opcional, para probar)* ejecute `supabase/seed_demo.sql`, que carga clientes, igualas, equipos y facturas de ejemplo.
    Para borrarlos después, ejecute `supabase/limpiar_demo.sql`.
 
@@ -107,6 +108,11 @@ Los salarios solo los ven `rrhh`, `contabilidad`, `gerencia` y `admin`.
 | `convertir_prospecto(id)` | Crea el cliente y conserva el origen del prospecto. |
 | `generar_prospectos_reposicion()` | Crea prospectos desde la base instalada cuando un componente vence. |
 | `tareas_diarias()` | Vencimientos, renovaciones y reposiciones. |
+| `guardar_cotizacion(p)` | Guarda la cotización con sus líneas; calcula ITBIS y margen, y la envía a aprobación si el descuento o el margen están fuera de los límites. |
+| `accion_cotizacion(id, accion)` | aprobar (gerencia), enviar, negociar, aceptar (crea el pedido y, si era prospecto, el cliente) o rechazar. |
+| `facturar_pedido(id)` | Emite la factura del pedido con NCF. |
+| `registrar_orden_servicio(p)` | Registra el servicio, descuenta inventario, actualiza el reemplazo del componente y completa la visita. |
+| `facturar_orden_servicio(id)` | Factura los insumos marcados como facturables. |
 
 Los códigos (CL-0001, FT-0001, IG-0001…) se asignan solos. Inventario, saldos de facturas y
 cuentas por pagar se actualizan automáticamente con cada movimiento, recibo o pago.
@@ -130,6 +136,10 @@ npm run dev                  # http://localhost:3000
 menú de módulos, Inicio, Comercial (prospectos con registro y conversión, ficha 360° del cliente,
 base instalada, origen y conversión) y consulta de todas las funciones de los demás módulos.
 
-**Próximas fases:** formularios de alta y edición por módulo (cotizador con márgenes, igualas,
-órdenes de servicio, compras, nómina), asientos contables automáticos, reportes DGII 606/607,
-facturación electrónica e-CF, aplicación móvil para técnicos y mensajes por WhatsApp.
+**Fase 2 (lista):** cotizador con márgenes y aprobación de gerencia, ciclo de la cotización hasta
+pedido y factura; igualas (alta, equipos cubiertos, visitas, órdenes y facturas); órdenes de servicio
+con insumos que descuentan inventario y actualizan la base instalada, y facturación de insumos.
+
+**Próximas fases:** recibos y cobranza, compras y recepción, cuentas por pagar y pagos, nómina,
+asientos contables automáticos, reportes DGII 606/607, facturación electrónica e-CF, aplicación
+móvil para técnicos y mensajes por WhatsApp.

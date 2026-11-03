@@ -101,10 +101,13 @@ export default async function FichaCliente({ params, searchParams }: { params: P
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/comercial/cotizaciones" className="btn-primary">
+            <Link href={`/comercial/cotizaciones/nueva?cliente=${id}`} className="btn-primary">
               Nueva cotización
             </Link>
-            <Link href="/igualas/ordenes" className="btn-secondary">
+            <Link href={`/igualas/contratos/nueva?cliente=${id}`} className="btn-secondary">
+              Nueva iguala
+            </Link>
+            <Link href={`/igualas/ordenes/nueva?cliente=${id}`} className="btn-secondary">
               Orden de servicio
             </Link>
           </div>
