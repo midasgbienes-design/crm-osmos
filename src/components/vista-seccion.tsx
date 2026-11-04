@@ -8,6 +8,7 @@ import { buscarModulo, rutaSeccion } from "@/lib/modulos";
 import { Aviso, Encabezado, Pestanas } from "./ui";
 import { Tabla } from "./tabla";
 import { MensajesUrl } from "./mensajes";
+import { buscarFormulario, nuevoTexto } from "@/lib/formularios";
 
 export function VistaSeccion({ modulo, seccion }: { modulo: string; seccion: string }) {
   const m = buscarModulo(modulo);
@@ -25,6 +26,8 @@ export function VistaSeccion({ modulo, seccion }: { modulo: string; seccion: str
   }, [modulo, seccion]);
 
   if (!m || !s) return <Aviso tono="bad">Esta sección no existe.</Aviso>;
+  const formulario = buscarFormulario(modulo, seccion);
+  const volverAqui = encodeURIComponent(rutaSeccion(m, s));
 
   const ejecutar = async (rpc: string, etiqueta: string, conPeriodo: boolean) => {
     setOcupado(rpc);
@@ -50,6 +53,10 @@ export function VistaSeccion({ modulo, seccion }: { modulo: string; seccion: str
         {s.nuevo ? (
           <Link href={s.nuevo.href} className="btn-primary">
             {s.nuevo.etiqueta}
+          </Link>
+        ) : formulario ? (
+          <Link href={`/editar/?f=${modulo}/${seccion}`} className="btn-primary">
+            {nuevoTexto(formulario)}
           </Link>
         ) : null}
         {s.acciones?.map((a) => (
@@ -78,7 +85,12 @@ export function VistaSeccion({ modulo, seccion }: { modulo: string; seccion: str
             <Aviso tono="bad">Error al consultar: {error}</Aviso>
           </div>
         ) : (
-          <Tabla columnas={s.columnas ?? []} filas={datos ?? []} vacio={cargando ? "Cargando…" : "No hay registros todavía."} />
+          <Tabla
+            columnas={s.columnas ?? []}
+            filas={datos ?? []}
+            vacio={cargando ? "Cargando…" : "No hay registros todavía."}
+            editar={formulario ? (f) => `/editar/?f=${modulo}/${seccion}&id=${f.id}&volver=${volverAqui}` : undefined}
+          />
         )}
       </section>
     </>

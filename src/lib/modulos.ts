@@ -108,6 +108,36 @@ export const MODULOS: Modulo[] = [
         acciones: [{ etiqueta: "Crear prospectos de reposición", rpc: "generar_prospectos_reposicion", parametros: "ninguno" }],
       },
       {
+        slug: "equipos", nombre: "Equipos instalados", tabla: "equipos_instalados",
+        select: "id,serie,descripcion,capacidad,fecha_instalacion,garantia_hasta,estado,cliente_id,clientes(nombre)",
+        orden: { campo: "serie", asc: true },
+        descripcion: "Registre cada sistema instalado; sus componentes alimentan las alertas de reposición.",
+        columnas: [
+          { campo: "serie", etiqueta: "Serie", tipo: "codigo" },
+          { campo: "clientes.nombre", etiqueta: "Cliente", tipo: "enlace", enlace: "/cliente/?id={cliente_id}" },
+          { campo: "descripcion", etiqueta: "Equipo" },
+          { campo: "capacidad", etiqueta: "Capacidad" },
+          { campo: "fecha_instalacion", etiqueta: "Instalado", tipo: "fecha" },
+          { campo: "garantia_hasta", etiqueta: "Garantía hasta", tipo: "fecha" },
+          { campo: "estado", etiqueta: "Estado", tipo: "estado" },
+        ],
+      },
+      {
+        slug: "componentes", nombre: "Componentes y reemplazos", tabla: "equipo_componentes",
+        select: "id,descripcion,cantidad,frecuencia_meses,ultimo_reemplazo,proximo_reemplazo,equipos_instalados(serie,descripcion,clientes(nombre))",
+        orden: { campo: "proximo_reemplazo", asc: true },
+        descripcion: "Membranas, lámparas, resinas y cartuchos de cada equipo, con su frecuencia de reemplazo.",
+        columnas: [
+          { campo: "equipos_instalados.serie", etiqueta: "Equipo", tipo: "codigo" },
+          { campo: "equipos_instalados.clientes.nombre", etiqueta: "Cliente" },
+          { campo: "descripcion", etiqueta: "Componente" },
+          { campo: "cantidad", etiqueta: "Cantidad", tipo: "numero" },
+          { campo: "frecuencia_meses", etiqueta: "Cada (meses)", tipo: "numero" },
+          { campo: "ultimo_reemplazo", etiqueta: "Último reemplazo", tipo: "fecha" },
+          { campo: "proximo_reemplazo", etiqueta: "Próximo", tipo: "fecha" },
+        ],
+      },
+      {
         slug: "cotizaciones", nombre: "Cotizaciones", tabla: "cotizaciones",
         nuevo: { etiqueta: "Nueva cotización", href: "/cotizacion/nueva/" },
         select: "id,numero,fecha,vence,total,margen_pct,estado,clientes(nombre),vendedores(nombre)",
@@ -292,6 +322,21 @@ export const MODULOS: Modulo[] = [
     icono: "compras",
     descripcion: "Solicitudes, órdenes de compra, recepción de mercancía e inventario de insumos",
     secciones: [
+      {
+        slug: "catalogo", nombre: "Catálogo de productos", tabla: "productos", select: "*",
+        orden: { campo: "nombre", asc: true },
+        descripcion: "Equipos, insumos, repuestos y servicios con su precio y costo. El cotizador usa este catálogo.",
+        columnas: [
+          { campo: "codigo", etiqueta: "Código", tipo: "codigo" },
+          { campo: "nombre", etiqueta: "Nombre" },
+          { campo: "tipo", etiqueta: "Tipo", tipo: "etiqueta" },
+          { campo: "categoria", etiqueta: "Categoría" },
+          { campo: "precio_venta", etiqueta: "Precio", tipo: "dinero" },
+          { campo: "costo_promedio", etiqueta: "Costo", tipo: "dinero" },
+          { campo: "existencia_minima", etiqueta: "Mínimo", tipo: "numero" },
+          { campo: "activo", etiqueta: "Activo", tipo: "estado" },
+        ],
+      },
       {
         slug: "inventario", nombre: "Inventario de insumos", tabla: "v_inventario", select: "*",
         orden: { campo: "nombre", asc: true },

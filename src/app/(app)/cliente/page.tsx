@@ -126,6 +126,7 @@ export default function FichaCliente() {
             <div className="flex flex-wrap gap-1.5 pt-1">{etiquetas.map((e) => <Estado key={e.t} valor={e.v} texto={e.t} />)}</div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href={`/editar/?f=comercial/clientes&id=${id}&volver=${encodeURIComponent(`/cliente/?id=${id}`)}`} className="btn-secondary">Editar datos</Link>
             <Link href={`/cotizacion/nueva/?cliente=${id}`} className="btn-primary">Nueva cotización</Link>
             <Link href={`/iguala/nueva/?cliente=${id}`} className="btn-secondary">Nueva iguala</Link>
             <Link href={`/orden/nueva/?cliente=${id}`} className="btn-secondary">Orden de servicio</Link>
@@ -163,6 +164,10 @@ export default function FichaCliente() {
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] items-start gap-4">
         <Bloque titulo="Equipos instalados">
+          <div className="flex gap-3 text-[13px]">
+            <Link href={`/editar/?f=comercial/equipos&cliente_id=${id}&volver=${encodeURIComponent(`/cliente/?id=${id}`)}`} className="font-bold text-osmos-navy2 underline">+ Agregar equipo</Link>
+            <Link href={`/editar/?f=comercial/componentes&volver=${encodeURIComponent(`/cliente/?id=${id}`)}`} className="font-bold text-osmos-navy2 underline">+ Agregar componente</Link>
+          </div>
           {datos.equipos.length === 0 ? <Vacio texto="No hay equipos registrados para este cliente." /> : datos.equipos.map((e) => (
             <div key={String(e.componente_id)} className="flex justify-between gap-3 border-b border-osmos-soft pb-2.5 text-[13px]">
               <div className="flex flex-col gap-0.5">
@@ -220,6 +225,7 @@ export default function FichaCliente() {
         </Bloque>
 
         <Bloque titulo="Contactos">
+          <Link href={`/editar/?f=comercial/contactos&cliente_id=${id}&volver=${encodeURIComponent(`/cliente/?id=${id}`)}`} className="self-start text-[13px] font-bold text-osmos-navy2 underline">+ Agregar contacto</Link>
           {datos.contactos.length === 0 ? <Vacio texto="Sin contactos registrados." /> : datos.contactos.map((c) => (
             <div key={c.id} className="flex items-center gap-2.5 text-[13px]">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-osmos-hover text-xs font-bold text-osmos-navy">{String(c.nombre).replace(/[[\]]/g, "").slice(0, 2).toUpperCase()}</span>

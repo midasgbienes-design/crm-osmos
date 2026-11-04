@@ -51,7 +51,17 @@ function Celda({ col, fila }: { col: Columna; fila: Fila }) {
 
 const NUMERICOS = new Set(["dinero", "numero", "pct"]);
 
-export function Tabla({ columnas, filas, vacio = "No hay registros todavía." }: { columnas: Columna[]; filas: Fila[]; vacio?: string }) {
+export function Tabla({
+  columnas,
+  filas,
+  vacio = "No hay registros todavía.",
+  editar,
+}: {
+  columnas: Columna[];
+  filas: Fila[];
+  vacio?: string;
+  editar?: (fila: Fila) => string;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-[13px]">
@@ -62,12 +72,13 @@ export function Tabla({ columnas, filas, vacio = "No hay registros todavía." }:
                 {c.etiqueta}
               </th>
             ))}
+            {editar ? <th scope="col" className="th"><span className="sr-only">Acciones</span></th> : null}
           </tr>
         </thead>
         <tbody>
           {filas.length === 0 ? (
             <tr>
-              <td className="td text-osmos-muted" colSpan={columnas.length}>
+              <td className="td text-osmos-muted" colSpan={columnas.length + (editar ? 1 : 0)}>
                 {vacio}
               </td>
             </tr>
@@ -79,6 +90,11 @@ export function Tabla({ columnas, filas, vacio = "No hay registros todavía." }:
                     <Celda col={c} fila={f} />
                   </td>
                 ))}
+                {editar ? (
+                  <td className="td text-right">
+                    <Link href={editar(f)} className="font-bold text-osmos-navy2 underline">Editar</Link>
+                  </td>
+                ) : null}
               </tr>
             ))
           )}
