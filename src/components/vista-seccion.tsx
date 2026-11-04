@@ -1,36 +1,49 @@
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { buscarModulo, rutaSeccion } from "@/lib/modulos";
-import { Aviso, Encabezado, Pestanas } from "@/components/ui";
-import { Tabla } from "@/components/tabla";
-import { ejecutarAccion } from "@/app/(app)/[modulo]/acciones";
+"use client";
 
-export async function VistaSeccion({
-  modulo,
-  seccion,
-  ok,
-  errorAccion,
-}: {
-  modulo: string;
-  seccion: string;
-  ok?: string;
-  errorAccion?: string;
-}) {
+import Link from "next/link";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase/cliente";
+import { useDatos } from "@/lib/usar-datos";
+import { buscarModulo, rutaSeccion } from "@/lib/modulos";
+import { Aviso, Encabezado, Pestanas } from "./ui";
+import { Tabla } from "./tabla";
+import { MensajesUrl } from "./mensajes";
+
+export function VistaSeccion({ modulo, seccion }: { modulo: string; seccion: string }) {
   const m = buscarModulo(modulo);
   const s = m?.secciones.find((x) => x.slug === seccion);
-  if (!m || !s) notFound();
-  if (s.ruta && s.ruta !== `/${modulo}/${seccion}`) redirect(s.ruta);
+  const [aviso, setAviso] = useState<{ tono: "ok" | "bad"; texto: string } | null>(null);
+  const [ocupado, setOcupado] = useState<string | null>(null);
 
-  const supabase = await createClient();
-  let consulta = supabase.from(s.tabla!).select(s.select ?? "*").limit(500);
-  if (s.orden) consulta = consulta.order(s.orden.campo, { ascending: s.orden.asc ?? true, nullsFirst: false });
-  const { data, error } = await consulta;
+  const { datos, error, cargando, recargar } = useDatos(async () => {
+    if (!s?.tabla) return [];
+    let q = supabase().from(s.tabla).select(s.select ?? "*").limit(500);
+    if (s.orden) q = q.order(s.orden.campo, { ascending: s.orden.asc ?? true, nullsFirst: false });
+    const r = await q;
+    if (r.error) throw new Error(r.error.message);
+    return (r.data ?? []) as unknown as Record<string, unknown>[];
+  }, [modulo, seccion]);
+
+  if (!m || !s) return <Aviso tono="bad">Esta sección no existe.</Aviso>;
+
+  const ejecutar = async (rpc: string, etiqueta: string, conPeriodo: boolean) => {
+    setOcupado(rpc);
+    setAviso(null);
+    const args = conPeriodo ? { p_periodo: new Date().toISOString().slice(0, 10) } : {};
+    const { data, error } = await supabase().rpc(rpc, args);
+    setOcupado(null);
+    if (error) {
+      setAviso({ tono: "bad", texto: `No se pudo completar: ${error.message}` });
+      return;
+    }
+    setAviso({ tono: "ok", texto: typeof data === "number" ? `${etiqueta}: ${data} registro(s) procesado(s).` : `${etiqueta}: completado.` });
+    recargar();
+  };
 
   return (
     <>
       <Encabezado
-        migas={[{ texto: "Osmos ERP", href: "/" }, { texto: m.nombre, href: `/${m.slug}` }, { texto: s.nombre }]}
+        migas={[{ texto: "Osmos ERP", href: "/" }, { texto: m.nombre, href: `/${m.slug}/` }, { texto: s.nombre }]}
         titulo={s.nombre}
         descripcion={s.descripcion ?? m.descripcion}
       >
@@ -40,36 +53,32 @@ export async function VistaSeccion({
           </Link>
         ) : null}
         {s.acciones?.map((a) => (
-          <form key={a.rpc} action={ejecutarAccion}>
-            <input type="hidden" name="modulo" value={m.slug} />
-            <input type="hidden" name="seccion" value={s.slug} />
-            <input type="hidden" name="rpc" value={a.rpc} />
-            <button type="submit" className={s.nuevo ? "btn-secondary" : "btn-primary"}>
-              {a.etiqueta}
-            </button>
-          </form>
+          <button
+            key={a.rpc}
+            type="button"
+            disabled={ocupado !== null}
+            onClick={() => ejecutar(a.rpc, a.etiqueta, a.parametros === "periodo")}
+            className={s.nuevo ? "btn-secondary" : "btn-primary"}
+          >
+            {ocupado === a.rpc ? "Procesando…" : a.etiqueta}
+          </button>
         ))}
       </Encabezado>
 
       <Pestanas items={m.secciones.map((x) => ({ slug: x.slug, nombre: x.nombre, href: rutaSeccion(m, x) }))} activa={s.slug} />
 
-      {ok ? <Aviso tono="ok">{ok}</Aviso> : null}
-      {errorAccion ? <Aviso tono="bad">{errorAccion}</Aviso> : null}
+      {aviso ? <Aviso tono={aviso.tono}>{aviso.texto}</Aviso> : <MensajesUrl />}
 
       <section className="card flex flex-col">
         <div className="flex items-center justify-between gap-2 border-b border-osmos-line px-3.5 py-3 text-[13px] text-osmos-muted">
-          <span>{error ? "No se pudo cargar la información" : `${data?.length ?? 0} registros`}</span>
+          <span>{cargando ? "Cargando…" : error ? "No se pudo cargar la información" : `${datos?.length ?? 0} registros`}</span>
         </div>
         {error ? (
           <div className="p-4">
-            <Aviso tono="bad">
-              {error.code === "42501" || error.message.includes("permission")
-                ? "Su rol no tiene acceso a esta sección."
-                : `Error al consultar: ${error.message}`}
-            </Aviso>
+            <Aviso tono="bad">Error al consultar: {error}</Aviso>
           </div>
         ) : (
-          <Tabla columnas={s.columnas ?? []} filas={(data ?? []) as unknown as Record<string, unknown>[]} />
+          <Tabla columnas={s.columnas ?? []} filas={datos ?? []} vacio={cargando ? "Cargando…" : "No hay registros todavía."} />
         )}
       </section>
     </>

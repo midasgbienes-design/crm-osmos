@@ -1,15 +1,12 @@
+import { MODULOS } from "@/lib/modulos";
 import { VistaSeccion } from "@/components/vista-seccion";
 
-export const dynamic = "force-dynamic";
+// Genera una página por cada función de cada módulo (excepto las que tienen pantalla propia).
+export function generateStaticParams() {
+  return MODULOS.flatMap((m) => m.secciones.filter((s) => !s.ruta).map((s) => ({ modulo: m.slug, seccion: s.slug })));
+}
 
-export default async function SeccionGenerica({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ modulo: string; seccion: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
-}) {
+export default async function SeccionGenerica({ params }: { params: Promise<{ modulo: string; seccion: string }> }) {
   const { modulo, seccion } = await params;
-  const { ok, error } = await searchParams;
-  return <VistaSeccion modulo={modulo} seccion={seccion} ok={ok} errorAccion={error} />;
+  return <VistaSeccion modulo={modulo} seccion={seccion} />;
 }

@@ -1,0 +1,19 @@
+# Osmos CRM · sitio estático en Hostinger
+DirectoryIndex index.html
+ErrorDocument 404 /404.html
+
+# Los archivos con hash de Next.js pueden guardarse en caché por un año
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <Files "config.js">
+    Header set Cache-Control "no-store"
+  </Files>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>

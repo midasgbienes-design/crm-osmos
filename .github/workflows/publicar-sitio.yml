@@ -1,0 +1,56 @@
+# Genera el sitio estático del CRM cada vez que hay cambios en main.
+#
+# Resultado:
+#   1. Un ZIP listo para subir a Hostinger en GitHub → Releases → "Sitio para Hostinger".
+#   2. (Opcional) Lo sube solo por FTP si se configuran estos secretos en
+#      Settings → Secrets and variables → Actions:
+#        FTP_SERVER, FTP_USERNAME, FTP_PASSWORD
+#      y, si la carpeta es distinta, la variable FTP_DIR (por defecto domains/osmos.do/public_html/crm/).
+name: Publicar sitio para Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Crear ZIP
+        run: cd out && zip -qr ../osmos-crm.zip . && cd .. && ls -lh osmos-crm.zip
+
+      - name: Publicar ZIP en Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete sitio --yes --cleanup-tag || true
+          gh release create sitio osmos-crm.zip \
+            --title "Sitio para Hostinger" \
+            --notes "Descargue osmos-crm.zip, súbalo a public_html/crm en Hostinger y extráigalo. No borre config.js. Versión: ${GITHUB_SHA::7}" \
+            --latest
+
+      - name: Subir por FTP a Hostinger (opcional)
+        if: env.FTP_SERVER != ''
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./out/
+          server-dir: ${{ vars.FTP_DIR || 'domains/osmos.do/public_html/crm/' }}

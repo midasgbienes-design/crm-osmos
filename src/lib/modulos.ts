@@ -7,7 +7,7 @@ export type Columna = {
   campo: string; // admite rutas a relaciones: "clientes.nombre"
   etiqueta: string;
   tipo?: TipoColumna;
-  enlace?: string; // plantilla, ej. "/comercial/clientes/{id}"
+  enlace?: string; // plantilla, ej. "/cliente/?id={id}"
 };
 
 export type Accion = {
@@ -46,7 +46,7 @@ export const MODULOS: Modulo[] = [
     icono: "comercial",
     descripcion: "Prospectos, oportunidades, clientes, base instalada, cotizaciones y pedidos",
     secciones: [
-      { slug: "prospectos", nombre: "Prospectos", ruta: "/comercial/prospectos" },
+      { slug: "prospectos", nombre: "Prospectos", ruta: "/prospectos/" },
       {
         slug: "origen", nombre: "Origen y conversión", tabla: "v_conversion_origen", select: "*",
         orden: { campo: "conversion_pct", asc: false },
@@ -80,7 +80,7 @@ export const MODULOS: Modulo[] = [
         select: "id,codigo,nombre,rnc_cedula,segmento,ciudad,limite_credito,origen,estado,vendedores(nombre)",
         orden: { campo: "nombre", asc: true },
         columnas: [
-          { campo: "codigo", etiqueta: "Código", tipo: "enlace", enlace: "/comercial/clientes/{id}" },
+          { campo: "codigo", etiqueta: "Código", tipo: "enlace", enlace: "/cliente/?id={id}" },
           { campo: "nombre", etiqueta: "Cliente" },
           { campo: "rnc_cedula", etiqueta: "RNC / Cédula" },
           { campo: "segmento", etiqueta: "Segmento", tipo: "etiqueta" },
@@ -97,7 +97,7 @@ export const MODULOS: Modulo[] = [
         descripcion: "Equipos instalados y próximos reemplazos de componentes.",
         columnas: [
           { campo: "serie", etiqueta: "Serie", tipo: "codigo" },
-          { campo: "cliente", etiqueta: "Cliente", tipo: "enlace", enlace: "/comercial/clientes/{cliente_id}" },
+          { campo: "cliente", etiqueta: "Cliente", tipo: "enlace", enlace: "/cliente/?id={cliente_id}" },
           { campo: "equipo", etiqueta: "Equipo" },
           { campo: "componente", etiqueta: "Componente" },
           { campo: "garantia_hasta", etiqueta: "Garantía hasta", tipo: "fecha" },
@@ -109,11 +109,11 @@ export const MODULOS: Modulo[] = [
       },
       {
         slug: "cotizaciones", nombre: "Cotizaciones", tabla: "cotizaciones",
-        nuevo: { etiqueta: "Nueva cotización", href: "/comercial/cotizaciones/nueva" },
+        nuevo: { etiqueta: "Nueva cotización", href: "/cotizacion/nueva/" },
         select: "id,numero,fecha,vence,total,margen_pct,estado,clientes(nombre),vendedores(nombre)",
         orden: { campo: "fecha", asc: false },
         columnas: [
-          { campo: "numero", etiqueta: "Cotización", tipo: "enlace", enlace: "/comercial/cotizaciones/{id}" },
+          { campo: "numero", etiqueta: "Cotización", tipo: "enlace", enlace: "/cotizacion/?id={id}" },
           { campo: "clientes.nombre", etiqueta: "Cliente" },
           { campo: "vendedores.nombre", etiqueta: "Vendedor" },
           { campo: "fecha", etiqueta: "Fecha", tipo: "fecha" },
@@ -129,7 +129,7 @@ export const MODULOS: Modulo[] = [
         orden: { campo: "fecha", asc: false },
         columnas: [
           { campo: "numero", etiqueta: "Pedido", tipo: "codigo" },
-          { campo: "cotizaciones.numero", etiqueta: "Cotización", tipo: "enlace", enlace: "/comercial/cotizaciones/{cotizacion_id}" },
+          { campo: "cotizaciones.numero", etiqueta: "Cotización", tipo: "enlace", enlace: "/cotizacion/?id={cotizacion_id}" },
           { campo: "clientes.nombre", etiqueta: "Cliente" },
           { campo: "fecha", etiqueta: "Fecha", tipo: "fecha" },
           { campo: "fecha_entrega", etiqueta: "Entrega", tipo: "fecha" },
@@ -148,12 +148,12 @@ export const MODULOS: Modulo[] = [
     secciones: [
       {
         slug: "contratos", nombre: "Contratos de iguala", tabla: "igualas",
-        nuevo: { etiqueta: "Nueva iguala", href: "/igualas/contratos/nueva" },
+        nuevo: { etiqueta: "Nueva iguala", href: "/iguala/nueva/" },
         select: "id,codigo,descripcion,frecuencia_visita,cuota_mensual,fecha_inicio,fecha_fin,estado,cliente_id,clientes(nombre),vendedores(nombre)",
         orden: { campo: "codigo", asc: false },
         columnas: [
-          { campo: "codigo", etiqueta: "Iguala", tipo: "enlace", enlace: "/igualas/contratos/{id}" },
-          { campo: "clientes.nombre", etiqueta: "Cliente", tipo: "enlace", enlace: "/comercial/clientes/{cliente_id}" },
+          { campo: "codigo", etiqueta: "Iguala", tipo: "enlace", enlace: "/iguala/?id={id}" },
+          { campo: "clientes.nombre", etiqueta: "Cliente", tipo: "enlace", enlace: "/cliente/?id={cliente_id}" },
           { campo: "descripcion", etiqueta: "Sistema" },
           { campo: "frecuencia_visita", etiqueta: "Visitas", tipo: "etiqueta" },
           { campo: "cuota_mensual", etiqueta: "Cuota mensual", tipo: "dinero" },
@@ -192,11 +192,11 @@ export const MODULOS: Modulo[] = [
       },
       {
         slug: "ordenes", nombre: "Órdenes de servicio", tabla: "ordenes_servicio",
-        nuevo: { etiqueta: "Nueva orden de servicio", href: "/igualas/ordenes/nueva" },
+        nuevo: { etiqueta: "Nueva orden de servicio", href: "/orden/nueva/" },
         select: "id,numero,fecha,tipo,trabajo_realizado,estado,clientes(nombre)",
         orden: { campo: "fecha", asc: false },
         columnas: [
-          { campo: "numero", etiqueta: "Orden", tipo: "enlace", enlace: "/igualas/ordenes/{id}" },
+          { campo: "numero", etiqueta: "Orden", tipo: "enlace", enlace: "/orden/?id={id}" },
           { campo: "fecha", etiqueta: "Fecha", tipo: "fecha" },
           { campo: "clientes.nombre", etiqueta: "Cliente" },
           { campo: "tipo", etiqueta: "Tipo", tipo: "etiqueta" },
@@ -422,7 +422,7 @@ export const MODULOS: Modulo[] = [
         columnas: [
           { campo: "numero", etiqueta: "Factura", tipo: "codigo" },
           { campo: "ncf", etiqueta: "NCF" },
-          { campo: "clientes.nombre", etiqueta: "Cliente", tipo: "enlace", enlace: "/comercial/clientes/{cliente_id}" },
+          { campo: "clientes.nombre", etiqueta: "Cliente", tipo: "enlace", enlace: "/cliente/?id={cliente_id}" },
           { campo: "origen", etiqueta: "Origen", tipo: "etiqueta" },
           { campo: "fecha", etiqueta: "Emisión", tipo: "fecha" },
           { campo: "vence", etiqueta: "Vencimiento", tipo: "fecha" },
@@ -435,7 +435,7 @@ export const MODULOS: Modulo[] = [
         slug: "antiguedad", nombre: "Antigüedad de saldos", tabla: "v_antiguedad_saldos", select: "*",
         orden: { campo: "total", asc: false },
         columnas: [
-          { campo: "cliente", etiqueta: "Cliente", tipo: "enlace", enlace: "/comercial/clientes/{cliente_id}" },
+          { campo: "cliente", etiqueta: "Cliente", tipo: "enlace", enlace: "/cliente/?id={cliente_id}" },
           { campo: "corriente", etiqueta: "Corriente", tipo: "dinero" },
           { campo: "d1_30", etiqueta: "1 – 30", tipo: "dinero" },
           { campo: "d31_60", etiqueta: "31 – 60", tipo: "dinero" },
@@ -719,5 +719,19 @@ export function buscarModulo(slug: string) {
 }
 
 export function rutaSeccion(m: Modulo, s: Seccion) {
-  return s.ruta ?? `/${m.slug}/${s.slug}`;
+  return s.ruta ?? `/${m.slug}/${s.slug}/`;
+}
+
+// Pantallas propias que pertenecen a un módulo (para resaltar el menú).
+export const PANTALLAS_DE_MODULO: Record<string, string> = {
+  "/prospectos": "comercial",
+  "/cliente": "comercial",
+  "/cotizacion": "comercial",
+  "/iguala": "igualas",
+  "/orden": "igualas",
+};
+
+export function moduloDeRuta(path: string) {
+  const base = "/" + (path.split("/")[1] ?? "");
+  return PANTALLAS_DE_MODULO[base] ?? base.slice(1);
 }

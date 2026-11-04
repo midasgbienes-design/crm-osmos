@@ -32,7 +32,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 const lineaVacia = (): Linea => ({ producto_id: "", descripcion: "", cantidad: "1", precio: "", descuento_pct: "0" });
 
 export function Cotizador({
-  accion,
+  onGuardar,
   productos,
   clientes,
   prospectos,
@@ -42,7 +42,7 @@ export function Cotizador({
   margenMin,
   inicial,
 }: {
-  accion: (formData: FormData) => void | Promise<void>;
+  onGuardar: (formData: FormData) => Promise<void>;
   productos: ProductoCot[];
   clientes: Opcion[];
   prospectos: Opcion[];
@@ -52,6 +52,7 @@ export function Cotizador({
   margenMin: number;
   inicial?: CotizacionInicial;
 }) {
+  const [guardando, setGuardando] = useState(false);
   const [para, setPara] = useState<"cliente" | "prospecto">(inicial?.prospecto_id && !inicial?.cliente_id ? "prospecto" : "cliente");
   const [lineas, setLineas] = useState<Linea[]>(
     inicial?.lineas?.length
@@ -113,7 +114,18 @@ export function Cotizador({
   );
 
   return (
-    <form action={accion} className="flex flex-col gap-4">
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setGuardando(true);
+        try {
+          await onGuardar(new FormData(e.currentTarget));
+        } finally {
+          setGuardando(false);
+        }
+      }}
+      className="flex flex-col gap-4"
+    >
       {inicial?.id ? <input type="hidden" name="id" value={inicial.id} /> : null}
       <input type="hidden" name="lineas" value={payload} />
 
@@ -244,7 +256,7 @@ export function Cotizador({
       </section>
 
       <div className="flex gap-2">
-        <button type="submit" className="btn-primary h-10">Guardar cotización</button>
+        <button type="submit" disabled={guardando} className="btn-primary h-10">{guardando ? "Guardando…" : "Guardar cotización"}</button>
       </div>
     </form>
   );

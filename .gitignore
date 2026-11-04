@@ -43,3 +43,6 @@ next-env.d.ts
 !.env.example
 supabase/.temp
 supabase/.branches
+
+# Clave de Supabase local (no se sube)
+public/config.js

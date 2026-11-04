@@ -1,22 +1,19 @@
+"use client";
+
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { cerrarSesion } from "@/app/login/acciones";
+import { Suspense } from "react";
+import { supabase } from "@/lib/supabase/cliente";
 import { Menu } from "@/components/menu";
+import { ProveedorSesion, useSesion } from "@/components/sesion";
 import { etiqueta } from "@/lib/formato";
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: perfil } = await supabase.from("perfiles").select("nombre, rol").eq("id", user.id).maybeSingle();
-  const nombre = perfil?.nombre ?? user.email ?? "Usuario";
+function Marco({ children }: { children: React.ReactNode }) {
+  const { usuario, perfil } = useSesion();
+  const nombre = perfil?.nombre ?? usuario.email ?? "Usuario";
   const iniciales = nombre
+    .replace(/[[\]]/g, "")
     .split(/\s+/)
-    .map((p: string) => p[0])
+    .map((p) => p[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
@@ -36,15 +33,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <span className="text-[13px] font-semibold">{nombre}</span>
             <span className="text-xs text-[#C9D3E8]">{etiqueta(perfil?.rol ?? "consulta")}</span>
           </span>
-          <form action={cerrarSesion}>
-            <button type="submit" className="ml-2 h-9 rounded-md border border-[#3A5A9A] px-3 text-[13px] hover:bg-osmos-navy2">
-              Salir
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={() => supabase().auth.signOut()}
+            className="ml-2 h-9 rounded-md border border-[#3A5A9A] px-3 text-[13px] hover:bg-osmos-navy2"
+          >
+            Salir
+          </button>
         </div>
       </header>
 
-      {perfil?.rol === "consulta" ? (
+      {perfil?.rol === "consulta" || !perfil ? (
         <div className="bg-osmos-yellow px-5 py-2 text-sm font-semibold text-osmos-navy">
           Su usuario aún no tiene un rol asignado. Pida al administrador que le asigne uno para ver la información.
         </div>
@@ -52,7 +51,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <div className="flex flex-1 flex-col md:flex-row">
         <Menu />
-        <main className="flex min-w-0 flex-1 flex-col gap-4 px-4 pb-10 pt-5 md:px-6">{children}</main>
+        <main className="flex min-w-0 flex-1 flex-col gap-4 px-4 pb-10 pt-5 md:px-6">
+          <Suspense fallback={<p className="text-sm text-osmos-muted">Cargando…</p>}>{children}</Suspense>
+        </main>
       </div>
 
       <footer className="flex flex-wrap gap-x-5 gap-y-1 border-t border-osmos-line bg-white px-5 py-2 text-xs text-osmos-muted">
@@ -60,5 +61,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <span className="ml-auto">Osmos Tecnología del Agua · Santiago, República Dominicana</span>
       </footer>
     </div>
+  );
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProveedorSesion>
+      <Marco>{children}</Marco>
+    </ProveedorSesion>
   );
 }

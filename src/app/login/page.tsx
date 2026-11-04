@@ -1,7 +1,39 @@
-import { iniciarSesion } from "./acciones";
+"use client";
 
-export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { configuracion, supabase } from "@/lib/supabase/cliente";
+import { FaltaConfiguracion } from "@/components/sesion";
+
+export default function Login() {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const [sinConfig, setSinConfig] = useState(false);
+
+  useEffect(() => {
+    setSinConfig(!configuracion().valida);
+  }, []);
+
+  if (sinConfig) return <FaltaConfiguracion />;
+
+  const entrar = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setEnviando(true);
+    setError(null);
+    const f = new FormData(e.currentTarget);
+    const { error } = await supabase().auth.signInWithPassword({
+      email: String(f.get("email") ?? ""),
+      password: String(f.get("password") ?? ""),
+    });
+    setEnviando(false);
+    if (error) {
+      setError("Correo o contraseña incorrectos.");
+      return;
+    }
+    router.replace("/");
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-osmos-navy px-4">
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-xl">
@@ -15,27 +47,21 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
             <p className="text-sm text-osmos-muted">Ingrese con su usuario de Osmos.</p>
           </div>
         </div>
-        <form action={iniciarSesion} className="flex flex-col gap-4">
+        <form onSubmit={entrar} className="flex flex-col gap-4">
           <div>
-            <label htmlFor="email" className="label">
-              Correo electrónico
-            </label>
+            <label htmlFor="email" className="label">Correo electrónico</label>
             <input id="email" name="email" type="email" required autoComplete="email" className="input" />
           </div>
           <div>
-            <label htmlFor="password" className="label">
-              Contraseña
-            </label>
+            <label htmlFor="password" className="label">Contraseña</label>
             <input id="password" name="password" type="password" required autoComplete="current-password" className="input" />
           </div>
           {error ? <p className="rounded-md bg-[#FDE7E7] px-3 py-2 text-sm text-[#A12020]">{error}</p> : null}
-          <button type="submit" className="btn-primary h-11">
-            Entrar
+          <button type="submit" disabled={enviando} className="btn-primary h-11">
+            {enviando ? "Entrando…" : "Entrar"}
           </button>
         </form>
-        <p className="mt-6 text-xs text-osmos-muted">
-          ¿No tiene usuario? Solicítelo al administrador del sistema.
-        </p>
+        <p className="mt-6 text-xs text-osmos-muted">¿No tiene usuario? Solicítelo al administrador del sistema.</p>
       </div>
     </main>
   );

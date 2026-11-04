@@ -3,9 +3,9 @@
 CRM y ERP de **Osmos Tecnología del Agua**: comercial, igualas de mantenimiento, vendedores y comisiones,
 compras e inventario, suplidores, cobros, pagos, contabilidad y recursos humanos.
 
-- **Aplicación:** Next.js 15 (App Router) + Tailwind, en `src/`.
-- **Base de datos:** Supabase (PostgreSQL), en `supabase/migrations/`.
-- **Publicación:** Vercel (recomendado).
+- **Aplicación:** Next.js 15 exportado como sitio estático + Tailwind, en `src/`.
+- **Base de datos y lógica:** Supabase (PostgreSQL), en `supabase/migrations/`.
+- **Publicación:** Hostinger, carpeta `public_html/crm` (subdominio crm.osmos.do).
 
 ---
 
@@ -40,19 +40,31 @@ En el proyecto de Supabase (`https://oshmqvbvwlvjsecyoxaw.supabase.co`):
 
 Repita para cada usuario con el rol que le corresponda (ver tabla de roles).
 
-### 3. Publicar la aplicación en Vercel
+### 3. Publicar en Hostinger (crm.osmos.do)
 
-1. En [vercel.com](https://vercel.com), **Add New → Project** e importe el repositorio `crm-osmos`.
-2. En **Environment Variables** agregue:
+El CRM es un **sitio estático**: una carpeta de archivos que se sube a `public_html/crm`,
+igual que un sitio HTML. Toda la lógica y los permisos viven en Supabase.
 
-   | Variable | Valor |
-   |---|---|
-   | `NEXT_PUBLIC_SUPABASE_URL` | `https://oshmqvbvwlvjsecyoxaw.supabase.co` |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → **Project Settings → API → anon public** |
+**Primera vez**
 
-3. **Deploy.** Cada cambio que se suba a `main` se publica solo.
+1. En GitHub, abra **Releases → Sitio para Hostinger** y descargue `osmos-crm.zip`
+   (se genera solo cada vez que hay cambios en `main`).
+2. En hPanel → **Archivos → Administrador de archivos**, entre a `domains/osmos.do/public_html/crm`,
+   suba `osmos-crm.zip` y use **Extraer** en esa misma carpeta.
+3. En esa carpeta, copie `config.example.js` como **`config.js`**, ábralo y pegue la clave
+   **anon public** de Supabase (Project Settings → API). Guarde.
+4. Abra **https://crm.osmos.do** e inicie sesión.
 
-> La clave `service_role` **nunca** se coloca en la aplicación ni en Vercel.
+**Actualizaciones:** descargue el ZIP nuevo, súbalo y extráigalo encima (reemplazando).
+`config.js` no viene en el ZIP, así que no se pierde.
+
+**Automático (opcional):** en GitHub → **Settings → Secrets and variables → Actions** cree
+`FTP_SERVER`, `FTP_USERNAME` y `FTP_PASSWORD` (hPanel → Archivos → Cuentas FTP). Desde entonces,
+cada cambio en `main` se sube solo a `public_html/crm`.
+
+> Nunca coloque la clave `service_role` en `config.js` ni en ningún archivo del sitio.
+
+En Supabase → **Authentication → URL Configuration** ponga `https://crm.osmos.do` como Site URL.
 
 ### 4. Tareas automáticas (opcional, recomendado)
 
@@ -125,9 +137,10 @@ y porcentajes de comisión (tabla `parametros`, `esquemas_comision` y `cuentas_c
 ## Desarrollo local
 
 ```bash
-cp .env.example .env.local   # y complete la clave anon
+cp public/config.example.js public/config.js   # y pegue la clave anon
 npm install
-npm run dev                  # http://localhost:3000
+npm run dev        # http://localhost:3000
+npm run build      # genera la carpeta out/ para subir a Hostinger
 ```
 
 ## Estado del proyecto
