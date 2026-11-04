@@ -5,6 +5,19 @@ import { useRouter } from "next/navigation";
 import { configuracion, supabase } from "@/lib/supabase/cliente";
 import { FaltaConfiguracion } from "@/components/sesion";
 
+// Traduce el error de Supabase a una explicación útil.
+function explicarError(mensaje: string, estado?: number) {
+  const m = mensaje.toLowerCase();
+  if (m.includes("invalid login credentials")) return "Correo o contraseña incorrectos.";
+  if (m.includes("email not confirmed")) return "El correo no está confirmado. En Supabase → Authentication → Users, confirme el usuario.";
+  if (m.includes("invalid api key") || m.includes("no api key") || estado === 401)
+    return "La clave de config.js no es válida. Copie de nuevo la clave anon public de Supabase (Project Settings → API).";
+  if (m.includes("database error")) return `Supabase no pudo leer el usuario (${mensaje}). Ejecute el script de reparación del usuario.`;
+  if (m.includes("failed to fetch") || m.includes("network"))
+    return "No hay conexión con Supabase. Revise la dirección (supabaseUrl) en config.js y su conexión a internet.";
+  return `No se pudo iniciar sesión: ${mensaje}`;
+}
+
 export default function Login() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -22,16 +35,21 @@ export default function Login() {
     setEnviando(true);
     setError(null);
     const f = new FormData(e.currentTarget);
-    const { error } = await supabase().auth.signInWithPassword({
-      email: String(f.get("email") ?? ""),
-      password: String(f.get("password") ?? ""),
-    });
-    setEnviando(false);
-    if (error) {
-      setError("Correo o contraseña incorrectos.");
-      return;
+    try {
+      const { error } = await supabase().auth.signInWithPassword({
+        email: String(f.get("email") ?? "").trim(),
+        password: String(f.get("password") ?? ""),
+      });
+      if (error) {
+        setError(explicarError(error.message, error.status));
+        return;
+      }
+      router.replace("/");
+    } catch (e) {
+      setError(explicarError(e instanceof Error ? e.message : String(e)));
+    } finally {
+      setEnviando(false);
     }
-    router.replace("/");
   };
 
   return (
