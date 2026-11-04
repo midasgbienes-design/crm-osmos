@@ -36,3 +36,18 @@ body {
     @apply whitespace-nowrap border-b border-osmos-soft px-3.5 py-2.5;
   }
 }
+
+/* Impresión: carta, sin menú ni colores de fondo de la aplicación. */
+@page {
+  size: letter;
+  margin: 14mm 12mm;
+}
+@media print {
+  body {
+    background: #fff;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

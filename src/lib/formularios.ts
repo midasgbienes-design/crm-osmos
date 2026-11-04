@@ -249,6 +249,26 @@ export const FORMULARIOS: Record<string, Formulario> = {
       { campo: "estado", etiqueta: "Estado", tipo: "seleccion", defecto: "activo", opciones: [["activo", "Activo"], ["vacaciones", "Vacaciones"], ["licencia", "Licencia"], ["inactivo", "Inactivo"]] },
     ],
   },
+  // Membrete de cotizaciones, facturas, conduces, órdenes y recibos (solo administrador).
+  "config/empresa": {
+    tabla: "empresa",
+    singular: "datos de la empresa",
+    despues: () => "/configuracion/",
+    campos: [
+      { campo: "razon_social", etiqueta: "Razón social", tipo: "texto", requerido: true },
+      { campo: "nombre_comercial", etiqueta: "Nombre comercial", tipo: "texto", requerido: true },
+      { campo: "rnc", etiqueta: "RNC", tipo: "texto", ayuda: "Aparece en todas las facturas" },
+      { campo: "telefono", etiqueta: "Teléfono", tipo: "telefono" },
+      { campo: "whatsapp", etiqueta: "WhatsApp", tipo: "telefono" },
+      { campo: "email", etiqueta: "Correo", tipo: "email" },
+      { campo: "direccion", etiqueta: "Dirección", tipo: "texto", ancho: "completo" },
+      { campo: "ciudad", etiqueta: "Ciudad", tipo: "texto" },
+      { campo: "sitio_web", etiqueta: "Sitio web", tipo: "texto" },
+      { campo: "condiciones_cotizacion", etiqueta: "Condiciones de las cotizaciones", tipo: "textarea", ancho: "completo" },
+      { campo: "condiciones_factura", etiqueta: "Nota al pie de las facturas", tipo: "textarea", ancho: "completo" },
+      { campo: "instrucciones_pago", etiqueta: "Cuentas para transferencias", tipo: "textarea", ancho: "completo", ayuda: "Ej. Banreservas, cuenta corriente 000-000000-0, a nombre de Osmos" },
+    ],
+  },
 };
 
 export function nuevoTexto(f: Formulario) {

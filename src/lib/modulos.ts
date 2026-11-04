@@ -158,7 +158,7 @@ export const MODULOS: Modulo[] = [
         select: "id,numero,fecha,fecha_entrega,total,estado,cotizacion_id,clientes(nombre),cotizaciones(numero)",
         orden: { campo: "fecha", asc: false },
         columnas: [
-          { campo: "numero", etiqueta: "Pedido", tipo: "codigo" },
+          { campo: "numero", etiqueta: "Pedido (conduce)", tipo: "enlace", enlace: "/imprimir/?doc=conduce&id={id}" },
           { campo: "cotizaciones.numero", etiqueta: "Cotización", tipo: "enlace", enlace: "/cotizacion/?id={cotizacion_id}" },
           { campo: "clientes.nombre", etiqueta: "Cliente" },
           { campo: "fecha", etiqueta: "Fecha", tipo: "fecha" },
@@ -465,7 +465,7 @@ export const MODULOS: Modulo[] = [
         select: "id,numero,ncf,fecha,vence,total,saldo,estado,origen,cliente_id,clientes(nombre)",
         orden: { campo: "fecha", asc: false },
         columnas: [
-          { campo: "numero", etiqueta: "Factura", tipo: "codigo" },
+          { campo: "numero", etiqueta: "Factura", tipo: "enlace", enlace: "/imprimir/?doc=factura&id={id}" },
           { campo: "ncf", etiqueta: "NCF" },
           { campo: "clientes.nombre", etiqueta: "Cliente", tipo: "enlace", enlace: "/cliente/?id={cliente_id}" },
           { campo: "origen", etiqueta: "Origen", tipo: "etiqueta" },
@@ -494,7 +494,7 @@ export const MODULOS: Modulo[] = [
         select: "id,numero,fecha,forma_pago,referencia,monto,aplicado,estado,clientes(nombre)",
         orden: { campo: "fecha", asc: false },
         columnas: [
-          { campo: "numero", etiqueta: "Recibo", tipo: "codigo" },
+          { campo: "numero", etiqueta: "Recibo", tipo: "enlace", enlace: "/imprimir/?doc=recibo&id={id}" },
           { campo: "fecha", etiqueta: "Fecha", tipo: "fecha" },
           { campo: "clientes.nombre", etiqueta: "Cliente" },
           { campo: "forma_pago", etiqueta: "Forma de pago", tipo: "etiqueta" },

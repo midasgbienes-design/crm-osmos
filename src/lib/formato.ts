@@ -29,6 +29,41 @@ export function formatoMes(v: unknown): string {
   return `${meses[Number(m) - 1] ?? m} ${y}`;
 }
 
+// Monto en letras para facturas y recibos: "Mil doscientos pesos con 50/100".
+const UNIDADES = ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho", "diecinueve", "veinte", "veintiuno", "veintidós", "veintitrés", "veinticuatro", "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve"];
+const DECENAS = ["", "", "", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa"];
+const CENTENAS = ["", "ciento", "doscientos", "trescientos", "cuatrocientos", "quinientos", "seiscientos", "setecientos", "ochocientos", "novecientos"];
+
+function menosDeMil(n: number): string {
+  if (n === 0) return "";
+  if (n === 100) return "cien";
+  const c = Math.floor(n / 100);
+  const r = n % 100;
+  let t = "";
+  if (r < 30) t = UNIDADES[r];
+  else t = DECENAS[Math.floor(r / 10)] + (r % 10 ? " y " + UNIDADES[r % 10] : "");
+  return [CENTENAS[c], t].filter(Boolean).join(" ");
+}
+
+// "veintiuno mil" → "veintiún mil", "treinta y uno mil" → "treinta y un mil"
+const apocope = (t: string) => t.replace(/veintiuno$/, "veintiún").replace(/uno$/, "un");
+
+export function numeroEnLetras(valor: number): string {
+  const n = Math.floor(Math.abs(valor));
+  const cent = Math.round((Math.abs(valor) - n) * 100);
+  if (n === 0) return `Cero pesos con ${String(cent).padStart(2, "0")}/100`;
+  const partes: string[] = [];
+  const millones = Math.floor(n / 1_000_000);
+  const miles = Math.floor((n % 1_000_000) / 1000);
+  const resto = n % 1000;
+  if (millones) partes.push(millones === 1 ? "un millón" : `${apocope(menosDeMil(millones))} millones`);
+  if (miles) partes.push(miles === 1 ? "mil" : `${apocope(menosDeMil(miles))} mil`);
+  if (resto) partes.push(menosDeMil(resto));
+  const texto = apocope(partes.join(" "));
+  const de = !miles && !resto && millones ? " de" : "";
+  return `${texto.charAt(0).toUpperCase()}${texto.slice(1)}${de} ${n === 1 ? "peso" : "pesos"} con ${String(cent).padStart(2, "0")}/100`;
+}
+
 // Etiquetas legibles para valores guardados en la base de datos.
 const ETIQUETAS: Record<string, string> = {
   web: "Página web",
@@ -39,6 +74,8 @@ const ETIQUETAS: Record<string, string> = {
   llamada: "Llamada entrante",
   evento: "Evento / feria",
   otro: "Otro",
+  cotizacion: "Cotización",
+  conduce: "Conduce",
   interno: "Interno (empleado)",
   externo: "Externo (comisionista)",
   referidor: "Referidor",

@@ -242,7 +242,7 @@ export default function FichaCliente() {
           <h3 className="mt-2 text-sm font-bold text-osmos-navy">Facturas abiertas</h3>
           {abiertas.length === 0 ? <Vacio texto="Ninguna." /> : abiertas.map((f) => (
             <div key={f.id} className="flex justify-between gap-2 text-[13px]">
-              <span className="flex flex-col"><span className="font-semibold">{String(f.numero)} · vence {formatoFecha(f.vence)}</span><span className="text-osmos-muted">Saldo {formatoDinero(f.saldo)}</span></span>
+              <span className="flex flex-col"><Link href={`/imprimir/?doc=factura&id=${f.id}`} className="font-semibold text-osmos-navy2 underline">{String(f.numero)} · vence {formatoFecha(f.vence)}</Link><span className="text-osmos-muted">Saldo {formatoDinero(f.saldo)}</span></span>
               <Estado valor={f.estado} />
             </div>
           ))}

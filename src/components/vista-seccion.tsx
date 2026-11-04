@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase/cliente";
 import { useDatos } from "@/lib/usar-datos";
 import { buscarModulo, rutaSeccion } from "@/lib/modulos";
 import { Aviso, Encabezado, Pestanas } from "./ui";
-import { Tabla } from "./tabla";
+import { TablaInteractiva } from "./tabla";
 import { MensajesUrl } from "./mensajes";
 import { buscarFormulario, nuevoTexto } from "@/lib/formularios";
 
@@ -18,11 +18,17 @@ export function VistaSeccion({ modulo, seccion }: { modulo: string; seccion: str
 
   const { datos, error, cargando, recargar } = useDatos(async () => {
     if (!s?.tabla) return [];
-    let q = supabase().from(s.tabla).select(s.select ?? "*").limit(500);
-    if (s.orden) q = q.order(s.orden.campo, { ascending: s.orden.asc ?? true, nullsFirst: false });
-    const r = await q;
-    if (r.error) throw new Error(r.error.message);
-    return (r.data ?? []) as unknown as Record<string, unknown>[];
+    // Se traen todos los registros en bloques de 1,000 (hasta 20,000) para buscar y filtrar en pantalla.
+    const filas: Record<string, unknown>[] = [];
+    for (let desde = 0; desde < 20000; desde += 1000) {
+      let q = supabase().from(s.tabla).select(s.select ?? "*");
+      if (s.orden) q = q.order(s.orden.campo, { ascending: s.orden.asc ?? true, nullsFirst: false });
+      const r = await q.range(desde, desde + 999);
+      if (r.error) throw new Error(r.error.message);
+      filas.push(...((r.data ?? []) as unknown as Record<string, unknown>[]));
+      if ((r.data ?? []).length < 1000) break;
+    }
+    return filas;
   }, [modulo, seccion]);
 
   if (!m || !s) return <Aviso tono="bad">Esta sección no existe.</Aviso>;
@@ -77,18 +83,16 @@ export function VistaSeccion({ modulo, seccion }: { modulo: string; seccion: str
       {aviso ? <Aviso tono={aviso.tono}>{aviso.texto}</Aviso> : <MensajesUrl />}
 
       <section className="card flex flex-col">
-        <div className="flex items-center justify-between gap-2 border-b border-osmos-line px-3.5 py-3 text-[13px] text-osmos-muted">
-          <span>{cargando ? "Cargando…" : error ? "No se pudo cargar la información" : `${datos?.length ?? 0} registros`}</span>
-        </div>
         {error ? (
           <div className="p-4">
             <Aviso tono="bad">Error al consultar: {error}</Aviso>
           </div>
         ) : (
-          <Tabla
+          <TablaInteractiva
             columnas={s.columnas ?? []}
             filas={datos ?? []}
-            vacio={cargando ? "Cargando…" : "No hay registros todavía."}
+            cargando={cargando}
+            archivo={`${m.nombre} - ${s.nombre}`}
             editar={formulario ? (f) => `/editar/?f=${modulo}/${seccion}&id=${f.id}&volver=${volverAqui}` : undefined}
           />
         )}

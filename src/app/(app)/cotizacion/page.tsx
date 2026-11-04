@@ -82,6 +82,7 @@ export default function DetalleCotizacion() {
         titulo={`Cotización ${c.numero}`}
         descripcion={`Para ${destinatario}`}
       >
+        <Link href={`/imprimir/?doc=cotizacion&id=${id}`} className="btn-secondary">Imprimir / PDF</Link>
         {editable ? <Link href={`/cotizacion/editar/?id=${id}`} className="btn-secondary">Editar</Link> : null}
         {pendiente && gerencia ? <Boton a="aprobar" texto="Aprobar descuento / margen" primario /> : null}
         {["borrador", "por_aprobar"].includes(estado) && !pendiente ? <Boton a="enviar" texto="Marcar como enviada" primario /> : null}
@@ -173,7 +174,11 @@ export default function DetalleCotizacion() {
                 <strong>{p.numero}</strong> · {etiqueta(p.estado)}
                 {p.facturas ? ` · Factura ${p.facturas.numero} (NCF ${p.facturas.ncf})` : ""}
               </span>
-              {!p.factura_id ? <button type="button" disabled={ocupado} onClick={() => facturar(p.id)} className="btn-primary">Emitir factura</button> : null}
+              <span className="flex flex-wrap gap-2">
+                <Link href={`/imprimir/?doc=conduce&id=${p.id}`} className="btn-secondary">Conduce</Link>
+                {p.factura_id ? <Link href={`/imprimir/?doc=factura&id=${p.factura_id}`} className="btn-secondary">Ver factura</Link> : null}
+                {!p.factura_id ? <button type="button" disabled={ocupado} onClick={() => facturar(p.id)} className="btn-primary">Emitir factura</button> : null}
+              </span>
             </div>
           ))}
         </section>

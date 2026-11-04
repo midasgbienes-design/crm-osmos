@@ -20,7 +20,7 @@ function Marco({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex flex-wrap items-center gap-x-5 gap-y-3 bg-osmos-navy px-5 py-2.5 text-white">
+      <header className="flex flex-wrap print:hidden items-center gap-x-5 gap-y-3 bg-osmos-navy px-5 py-2.5 text-white">
         <Link href="/" className="flex items-center gap-3.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/osmos-wordmark-blanco.png" alt="Osmos" className="h-auto w-[104px]" />
@@ -44,19 +44,21 @@ function Marco({ children }: { children: React.ReactNode }) {
       </header>
 
       {perfil?.rol === "consulta" || !perfil ? (
-        <div className="bg-osmos-yellow px-5 py-2 text-sm font-semibold text-osmos-navy">
+        <div className="bg-osmos-yellow px-5 print:hidden py-2 text-sm font-semibold text-osmos-navy">
           Su usuario aún no tiene un rol asignado. Pida al administrador que le asigne uno para ver la información.
         </div>
       ) : null}
 
       <div className="flex flex-1 flex-col md:flex-row">
-        <Menu />
-        <main className="flex min-w-0 flex-1 flex-col gap-4 px-4 pb-10 pt-5 md:px-6">
+        <div className="print:hidden md:flex md:shrink-0">
+          <Menu />
+        </div>
+        <main className="flex min-w-0 flex-1 flex-col gap-4 px-4 pb-10 pt-5 md:px-6 print:p-0">
           <Suspense fallback={<p className="text-sm text-osmos-muted">Cargando…</p>}>{children}</Suspense>
         </main>
       </div>
 
-      <footer className="flex flex-wrap gap-x-5 gap-y-1 border-t border-osmos-line bg-white px-5 py-2 text-xs text-osmos-muted">
+      <footer className="flex flex-wrap print:hidden gap-x-5 gap-y-1 border-t border-osmos-line bg-white px-5 py-2 text-xs text-osmos-muted">
         <span>Moneda: Peso dominicano (DOP)</span>
         <span className="ml-auto">Osmos Tecnología del Agua · Santiago, República Dominicana</span>
       </footer>

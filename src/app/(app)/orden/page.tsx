@@ -57,6 +57,8 @@ export default function DetalleOrden() {
         titulo={`Orden de servicio ${os.numero}`}
         descripcion={`${cliente.nombre} · ${etiqueta(os.tipo)} · ${formatoFecha(os.fecha)}`}
       >
+        <Link href={`/imprimir/?doc=orden&id=${id}`} className="btn-secondary">Imprimir orden</Link>
+        {os.factura_id ? <Link href={`/imprimir/?doc=factura&id=${os.factura_id}`} className="btn-secondary">Ver factura</Link> : null}
         {os.estado === "por_facturar" ? (
           <button type="button" disabled={ocupado} onClick={facturar} className="btn-primary">Facturar insumos ({formatoDinero(porFacturar)} + ITBIS)</button>
         ) : null}
