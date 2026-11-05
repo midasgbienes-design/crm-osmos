@@ -29,10 +29,10 @@ function Marco({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="ml-auto flex items-center gap-3">
           <span className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-osmos-teal text-[13px] font-bold">{iniciales}</span>
-          <span className="flex flex-col leading-4">
+          <Link href="/cuenta/" title="Mi cuenta y contraseña" className="flex flex-col leading-4 hover:underline">
             <span className="text-[13px] font-semibold">{nombre}</span>
-            <span className="text-xs text-[#C9D3E8]">{etiqueta(perfil?.rol ?? "consulta")}</span>
-          </span>
+            <span className="text-xs text-[#C9D3E8]">{etiqueta(perfil?.rol ?? "consulta")} · Mi cuenta</span>
+          </Link>
           <button
             type="button"
             onClick={() => supabase().auth.signOut()}

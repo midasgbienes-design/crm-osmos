@@ -145,3 +145,62 @@ end $$;
 
 grant execute on function public.tablero_gerencia(date) to authenticated;
 revoke execute on function public.tablero_gerencia(date) from anon, public;
+
+-- ---------------------------------------------------------------------
+-- 3. Historial de cambios en más tablas
+-- (facturas, recibos, pagos, asientos, comisiones, nóminas, igualas y
+--  cotizaciones ya se auditaban desde el esquema base)
+-- ---------------------------------------------------------------------
+do $$
+declare t text;
+begin
+  foreach t in array array['perfiles','clientes','contactos','prospectos','oportunidades','vendedores','esquemas_comision',
+                           'productos','suplidores','empleados','equipos_instalados','equipo_componentes','pedidos_venta',
+                           'ordenes_servicio','secuencias_ncf','cuentas_bancarias','ordenes_compra','solicitudes_ausencia']
+  loop
+    if not exists (select 1 from pg_trigger where tgname = 'auditar' and tgrelid = ('public.' || t)::regclass) then
+      execute format('create trigger auditar after insert or update or delete on public.%I for each row execute function public.tg_auditar()', t);
+    end if;
+  end loop;
+end $$;
+
+create index if not exists auditoria_tabla_fecha on public.auditoria (tabla, creado_en desc);
+create index if not exists auditoria_registro on public.auditoria (registro_id);
+create index if not exists auditoria_usuario on public.auditoria (usuario_id, creado_en desc);
+
+-- ---------------------------------------------------------------------
+-- 4. Usuarios del sistema (solo administrador)
+-- ---------------------------------------------------------------------
+create or replace function public.usuarios_sistema()
+returns table (id uuid, nombre text, email text, rol text, activo boolean, creado timestamptz,
+               ultimo_acceso timestamptz, confirmado boolean, vendedor text, empleado text)
+language plpgsql stable security definer set search_path = public, auth as $$
+begin
+  if not tiene_rol('admin') then raise exception 'Solo el administrador puede ver los usuarios'; end if;
+  return query
+    select p.id, p.nombre, coalesce(p.email, u.email::text), p.rol, p.activo, p.created_at,
+           u.last_sign_in_at, u.email_confirmed_at is not null,
+           (select v.nombre from vendedores v where v.perfil_id = p.id limit 1),
+           (select e.nombre from empleados e where e.perfil_id = p.id limit 1)
+      from perfiles p
+      left join auth.users u on u.id = p.id
+     order by p.activo desc, p.nombre;
+end $$;
+
+grant execute on function public.usuarios_sistema() to authenticated;
+revoke execute on function public.usuarios_sistema() from anon, public;
+
+-- Nadie puede quitarse a sí mismo el rol de administrador ni desactivarse
+-- (evita quedarse sin acceso al sistema).
+create or replace function public.tg_proteger_admin()
+returns trigger language plpgsql as $$
+begin
+  if old.id = auth.uid() and old.rol = 'admin' and (new.rol <> 'admin' or not new.activo) then
+    raise exception 'No puede quitarse su propio rol de administrador ni desactivar su usuario';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists proteger_admin on public.perfiles;
+create trigger proteger_admin before update on public.perfiles
+  for each row execute function public.tg_proteger_admin();

@@ -28,3 +28,12 @@ export function supabase(): SupabaseClient {
   });
   return cliente;
 }
+
+// Cliente aparte, sin guardar sesión, para registrar usuarios nuevos sin
+// cerrar la sesión del administrador que los crea.
+export function clienteAislado(): SupabaseClient {
+  const { url, key } = configuracion();
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: "osmos-crm-alta" },
+  });
+}

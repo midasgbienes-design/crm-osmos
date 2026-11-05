@@ -23,6 +23,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [sinConfig, setSinConfig] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
     setSinConfig(!configuracion().valida);
@@ -52,6 +53,19 @@ export default function Login() {
     }
   };
 
+  const olvide = async () => {
+    const email = (document.getElementById("email") as HTMLInputElement | null)?.value.trim() ?? "";
+    setError(null);
+    setInfo(null);
+    if (!email) {
+      setError("Escriba su correo arriba y vuelva a pulsar «¿Olvidó su contraseña?».");
+      return;
+    }
+    const { error } = await supabase().auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/cuenta/?recuperar=1` });
+    if (error) setError(explicarError(error.message, error.status));
+    else setInfo(`Si ${email} tiene usuario, le llegará un correo con el enlace para crear una contraseña nueva.`);
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-osmos-navy px-4">
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-xl">
@@ -75,9 +89,11 @@ export default function Login() {
             <input id="password" name="password" type="password" required autoComplete="current-password" className="input" />
           </div>
           {error ? <p className="rounded-md bg-[#FDE7E7] px-3 py-2 text-sm text-[#A12020]">{error}</p> : null}
+          {info ? <p className="rounded-md bg-[#E3F4E8] px-3 py-2 text-sm text-[#1D6B3A]">{info}</p> : null}
           <button type="submit" disabled={enviando} className="btn-primary h-11">
             {enviando ? "Entrando…" : "Entrar"}
           </button>
+          <button type="button" onClick={olvide} className="self-start text-xs font-bold text-osmos-navy2 underline">¿Olvidó su contraseña?</button>
         </form>
         <p className="mt-6 text-xs text-osmos-muted">¿No tiene usuario? Solicítelo al administrador del sistema.</p>
       </div>

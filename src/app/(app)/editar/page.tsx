@@ -9,6 +9,8 @@ import { FORMULARIOS, creadoTexto, nuevoTexto } from "@/lib/formularios";
 import { Editor, leerValores, rellenar, type Opciones } from "@/components/editor";
 import { Aviso, Encabezado } from "@/components/ui";
 import { Cargando } from "@/components/mensajes";
+import { useSesion } from "@/components/sesion";
+import Link from "next/link";
 
 // Mensajes de la base de datos traducidos para el usuario.
 function explicar(msg: string) {
@@ -31,6 +33,7 @@ export default function EditarRegistro() {
   const m = buscarModulo(modulo);
   const s = m?.secciones.find((x) => x.slug === seccion);
   const [error, setError] = useState<string | null>(null);
+  const { perfil } = useSesion();
 
   const { datos, error: errCarga, cargando } = useDatos(async () => {
     if (!formulario) return null;
@@ -100,7 +103,11 @@ export default function EditarRegistro() {
         ]}
         titulo={titulo.charAt(0).toUpperCase() + titulo.slice(1)}
         descripcion="Los campos con * son obligatorios."
-      />
+      >
+        {id && perfil?.rol === "admin" && formulario.tabla !== "empresa" ? (
+          <Link href={`/configuracion/auditoria/?registro=${id}`} className="btn-secondary">Historial de cambios</Link>
+        ) : null}
+      </Encabezado>
       {error ? <Aviso tono="bad">{error}</Aviso> : null}
       {errCarga ? <Aviso tono="bad">{errCarga}</Aviso> : null}
       {cargando && !datos ? (
