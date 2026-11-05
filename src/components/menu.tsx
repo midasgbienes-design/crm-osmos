@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { MODULOS, moduloDeRuta } from "@/lib/modulos";
 import { Icono } from "./iconos";
 import { esGerencia, useSesion } from "./sesion";
+import { cargarAvisos } from "@/lib/avisos";
 
 const GRUPOS = ["Operaciones", "Finanzas", "Personas"] as const;
 
@@ -15,11 +16,20 @@ export function Menu() {
   const [abierto, setAbierto] = useState(false);
   const { perfil } = useSesion();
   const rol = perfil?.rol;
+  // Cantidad de avisos urgentes para mostrar junto a "Avisos" (se actualiza cada 10 minutos).
+  const [urgentes, setUrgentes] = useState(0);
+  useEffect(() => {
+    let activo = true;
+    const contar = () => cargarAvisos().then((a) => activo && setUrgentes(a.filter((x) => x.prioridad <= 2).length)).catch(() => {});
+    contar();
+    const t = setInterval(contar, 600000);
+    return () => { activo = false; clearInterval(t); };
+  }, []);
 
   // En el teléfono el menú se cierra al cambiar de pantalla.
   useEffect(() => setAbierto(false), [path]);
 
-  const item = (href: string, nombre: string, icono: string, activo: boolean) => (
+  const item = (href: string, nombre: string, icono: string, activo: boolean, insignia?: number) => (
     <Link
       key={href}
       href={href}
@@ -30,6 +40,7 @@ export function Menu() {
     >
       <Icono nombre={icono} />
       {nombre}
+      {insignia ? <span className="ml-auto rounded-full bg-[#C2410C] px-2 text-[11px] font-bold leading-5 text-white" aria-label={`${insignia} avisos importantes`}>{insignia}</span> : null}
     </Link>
   );
 
@@ -50,7 +61,7 @@ export function Menu() {
       </button>
       <div className={`${abierto ? "flex" : "hidden"} flex-col gap-1 px-3 py-4 md:flex`}>
         {item("/", "Inicio", "inicio", path === "/")}
-        {item("/avisos/", "Avisos", "avisos", path.startsWith("/avisos"))}
+        {item("/avisos/", "Avisos", "avisos", path.startsWith("/avisos"), urgentes)}
         {esGerencia(rol) || rol === "contabilidad" ? item("/tableros/", "Tableros de gerencia", "tableros", path.startsWith("/tableros")) : null}
         {GRUPOS.map((g) => (
           <div key={g} className="flex flex-col gap-1">

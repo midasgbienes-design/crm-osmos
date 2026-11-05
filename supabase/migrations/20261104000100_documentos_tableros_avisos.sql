@@ -204,3 +204,119 @@ end $$;
 drop trigger if exists proteger_admin on public.perfiles;
 create trigger proteger_admin before update on public.perfiles
   for each row execute function public.tg_proteger_admin();
+
+-- ---------------------------------------------------------------------
+-- 5. Avisos del día
+-- Respeta los permisos del usuario: cada rol recibe solo los avisos de lo
+-- que puede ver (cobros ve facturas, técnicos ven visitas, etc.).
+-- ---------------------------------------------------------------------
+create or replace function public.avisos()
+returns table (categoria text, prioridad int, titulo text, detalle text, fecha date, monto numeric,
+               enlace text, cliente text, telefono text, email text, registro_id uuid)
+language plpgsql stable set search_path = public as $$
+declare
+  v_renovar int := coalesce((select valor::int from parametros where clave = 'dias_alerta_renovacion'), 30);
+begin
+  -- Cobros: facturas vencidas y por vencer en 7 días
+  return query
+    select 'cobro', case when current_date - coalesce(f.vence, f.fecha) > 30 then 1 else 2 end,
+           'Factura ' || f.numero || ' vencida hace ' || (current_date - coalesce(f.vence, f.fecha)) || ' día(s)',
+           c.nombre, coalesce(f.vence, f.fecha), f.saldo, '/imprimir/?doc=factura&id=' || f.id, c.nombre, c.telefono, c.email, f.id
+      from facturas f join clientes c on c.id = f.cliente_id
+     where f.saldo > 0 and f.estado not in ('anulada','borrador') and coalesce(f.vence, f.fecha) < current_date;
+  return query
+    select 'cobro', 3, 'Factura ' || f.numero || ' vence ' || to_char(f.vence, 'DD/MM'),
+           c.nombre, f.vence, f.saldo, '/imprimir/?doc=factura&id=' || f.id, c.nombre, c.telefono, c.email, f.id
+      from facturas f join clientes c on c.id = f.cliente_id
+     where f.saldo > 0 and f.estado not in ('anulada','borrador') and f.vence between current_date and current_date + 7;
+  -- Compromisos de pago que vencen hoy o ya pasaron
+  return query
+    select 'cobro', 2, 'Compromiso de pago de ' || c.nombre,
+           coalesce(g.resultado, 'Prometió pagar'), g.compromiso_fecha, g.compromiso_monto, '/cliente/?id=' || c.id,
+           c.nombre, c.telefono, c.email, g.id
+      from gestiones_cobro g join clientes c on c.id = g.cliente_id
+     where g.estado = 'prometido' and g.compromiso_fecha <= current_date;
+
+  -- Igualas por vencer o por renovar
+  return query
+    select 'iguala', case when i.fecha_fin < current_date then 1 else 2 end,
+           'Iguala ' || i.codigo || case when i.fecha_fin < current_date then ' venció' else ' vence' end || ' el ' || to_char(i.fecha_fin, 'DD/MM/YYYY'),
+           c.nombre || coalesce(' · ' || i.descripcion, ''), i.fecha_fin, i.cuota_mensual, '/iguala/?id=' || i.id, c.nombre, c.telefono, c.email, i.id
+      from igualas i join clientes c on c.id = i.cliente_id
+     where i.estado in ('vigente','por_renovar') and i.fecha_fin is not null and i.fecha_fin <= current_date + v_renovar;
+
+  -- Servicio técnico: visitas atrasadas y de los próximos 2 días
+  return query
+    select 'servicio', case when v.fecha_programada < current_date then 1 else 3 end,
+           case when v.fecha_programada < current_date then 'Visita atrasada: ' when v.fecha_programada = current_date then 'Visita hoy: ' else 'Visita mañana o pasado: ' end || c.nombre,
+           coalesce(v.servicio, 'Mantenimiento') || coalesce(' · ' || v.ruta, ''), v.fecha_programada, null::numeric,
+           '/orden/nueva/?cliente=' || c.id || '&visita=' || v.id, c.nombre, c.telefono, c.email, v.id
+      from visitas v join clientes c on c.id = v.cliente_id
+     where v.estado = 'programada' and v.fecha_programada <= current_date + 2;
+
+  -- Base instalada: reemplazos vencidos o próximos y garantías por vencer
+  return query
+    select 'reposicion', case when b.estado_reposicion = 'vencido' then 2 else 3 end,
+           b.componente || ' · ' || case when b.estado_reposicion = 'vencido' then 'reemplazo vencido' else 'reemplazo próximo' end,
+           b.cliente || ' · ' || b.equipo || ' (' || b.serie || ')', b.proximo_reemplazo, b.venta_estimada,
+           '/cliente/?id=' || b.cliente_id, b.cliente, c.telefono, c.email, b.componente_id
+      from v_base_instalada b join clientes c on c.id = b.cliente_id
+     where b.estado_reposicion in ('vencido','proximo');
+  return query
+    select 'reposicion', 3, 'Garantía por vencer: ' || e.descripcion,
+           c.nombre || ' · serie ' || e.serie, e.garantia_hasta, null::numeric, '/cliente/?id=' || c.id, c.nombre, c.telefono, c.email, e.id
+      from equipos_instalados e join clientes c on c.id = e.cliente_id
+     where e.estado <> 'retirado' and e.garantia_hasta between current_date and current_date + 30;
+
+  -- Ventas: cotizaciones por aprobar, cotizaciones vencidas sin respuesta y seguimientos atrasados
+  return query
+    select 'ventas', 2, 'Cotización ' || q.numero || ' espera aprobación de gerencia',
+           coalesce(c.nombre, p.empresa, p.nombre, ''), q.fecha, q.total, '/cotizacion/?id=' || q.id,
+           coalesce(c.nombre, p.empresa, p.nombre), coalesce(c.telefono, p.telefono), coalesce(c.email, p.email), q.id
+      from cotizaciones q left join clientes c on c.id = q.cliente_id left join prospectos p on p.id = q.prospecto_id
+     where q.estado = 'por_aprobar' or (q.requiere_aprobacion and q.aprobado_en is null and q.estado = 'borrador');
+  return query
+    select 'ventas', 2, 'Dar seguimiento a la cotización ' || q.numero,
+           coalesce(c.nombre, p.empresa, p.nombre, '') || ' · venció el ' || to_char(q.vence, 'DD/MM'), q.vence, q.total, '/cotizacion/?id=' || q.id,
+           coalesce(c.nombre, p.empresa, p.nombre), coalesce(c.telefono, p.telefono), coalesce(c.email, p.email), q.id
+      from cotizaciones q left join clientes c on c.id = q.cliente_id left join prospectos p on p.id = q.prospecto_id
+     where q.estado in ('enviada','en_negociacion') and q.vence < current_date;
+  return query
+    select 'ventas', 3, 'Seguimiento a prospecto: ' || coalesce(p.empresa, p.nombre),
+           coalesce(p.proxima_accion, 'Contactar'), p.proxima_fecha, null::numeric, '/prospectos/?id=' || p.id,
+           coalesce(p.empresa, p.nombre), p.telefono, p.email, p.id
+      from prospectos p
+     where p.estado in ('nuevo','contactado','calificado') and p.proxima_fecha <= current_date;
+
+  -- Compras: inventario bajo el mínimo (solo para quienes ven las existencias)
+  if tiene_rol('compras','almacen','tecnico') then
+  return query
+    select 'inventario', 2, 'Inventario bajo: ' || i.nombre,
+           'Hay ' || i.existencia || ' ' || i.unidad || '; mínimo ' || i.existencia_minima, current_date, null::numeric,
+           '/compras/inventario/', null::text, null::text, null::text, i.producto_id
+      from v_inventario i where i.bajo_minimo;
+  end if;
+
+  -- Pagos: cuentas por pagar que vencen en 7 días o ya vencieron
+  return query
+    select 'pago', case when fs.vence < current_date then 1 else 3 end,
+           'Pagar ' || coalesce(s.nombre, v.nombre, 'suplidor') || case when fs.vence < current_date then ' (vencida)' else '' end,
+           coalesce(fs.concepto, fs.numero), fs.vence, fs.saldo, '/pagos/facturas/', null::text, null::text, null::text, fs.id
+      from facturas_suplidor fs left join suplidores s on s.id = fs.suplidor_id left join vendedores v on v.id = fs.vendedor_id
+     where fs.saldo > 0 and fs.estado not in ('anulada','pagada') and fs.vence <= current_date + 7;
+
+  -- Fiscal: secuencias de NCF por agotarse o vencer
+  return query
+    select 'fiscal', case when n.hasta - n.actual < 20 or n.vence < current_date + 7 then 1 else 2 end,
+           'Secuencia NCF ' || n.tipo || case when n.vence <= current_date + 30 then ' vence el ' || to_char(n.vence, 'DD/MM/YYYY') else ' por agotarse' end,
+           'Quedan ' || (n.hasta - n.actual + 1) || ' comprobantes. Solicite más en la Oficina Virtual de la DGII.', coalesce(n.vence, current_date), null::numeric,
+           '/cobros/ncf/', null::text, null::text, null::text, n.id
+      from secuencias_ncf n
+     where n.activa and ((n.hasta - n.actual + 1) <= greatest(50, (n.hasta - n.desde + 1) * 0.1) or n.vence <= current_date + 30);
+end $$;
+
+grant execute on function public.avisos() to authenticated;
+revoke execute on function public.avisos() from anon, public;
+
+-- Actualiza el esquema de la API para que las funciones nuevas estén disponibles de inmediato.
+notify pgrst, 'reload schema';
