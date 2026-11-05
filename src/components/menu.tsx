@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MODULOS, moduloDeRuta } from "@/lib/modulos";
 import { Icono } from "./iconos";
+import { esGerencia, useSesion } from "./sesion";
 
 const GRUPOS = ["Operaciones", "Finanzas", "Personas"] as const;
 
@@ -12,6 +13,8 @@ export function Menu() {
   const path = usePathname() ?? "/";
   const actual = moduloDeRuta(path);
   const [abierto, setAbierto] = useState(false);
+  const { perfil } = useSesion();
+  const rol = perfil?.rol;
 
   // En el teléfono el menú se cierra al cambiar de pantalla.
   useEffect(() => setAbierto(false), [path]);
@@ -47,12 +50,20 @@ export function Menu() {
       </button>
       <div className={`${abierto ? "flex" : "hidden"} flex-col gap-1 px-3 py-4 md:flex`}>
         {item("/", "Inicio", "inicio", path === "/")}
+        {item("/avisos/", "Avisos", "avisos", path.startsWith("/avisos"))}
+        {esGerencia(rol) || rol === "contabilidad" ? item("/tableros/", "Tableros de gerencia", "tableros", path.startsWith("/tableros")) : null}
         {GRUPOS.map((g) => (
           <div key={g} className="flex flex-col gap-1">
             <span className="px-3 pb-1 pt-3 text-[11px] font-bold tracking-wider text-osmos-muted">{g.toUpperCase()}</span>
             {MODULOS.filter((m) => m.grupo === g).map((m) => item(`/${m.slug}/`, m.nombre, m.icono, actual === m.slug))}
           </div>
         ))}
+        {esGerencia(rol) ? (
+          <div className="flex flex-col gap-1">
+            <span className="px-3 pb-1 pt-3 text-[11px] font-bold tracking-wider text-osmos-muted">SISTEMA</span>
+            {item("/configuracion/", "Configuración", "configuracion", path.startsWith("/configuracion"))}
+          </div>
+        ) : null}
       </div>
     </nav>
   );

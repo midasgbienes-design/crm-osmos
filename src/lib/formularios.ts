@@ -249,6 +249,23 @@ export const FORMULARIOS: Record<string, Formulario> = {
       { campo: "estado", etiqueta: "Estado", tipo: "seleccion", defecto: "activo", opciones: [["activo", "Activo"], ["vacaciones", "Vacaciones"], ["licencia", "Licencia"], ["inactivo", "Inactivo"]] },
     ],
   },
+  "igualas/contratos": {
+    tabla: "igualas",
+    singular: "iguala", femenino: true,
+    despues: (id) => `/iguala/?id=${id}`,
+    campos: [
+      { campo: "cliente_id", etiqueta: "Cliente", tipo: "relacion", relacion: CLIENTE, requerido: true },
+      { campo: "descripcion", etiqueta: "Sistema cubierto", tipo: "texto", ayuda: "Ej. Ósmosis inversa 2,000 GPD + suavizador" },
+      { campo: "frecuencia_visita", etiqueta: "Frecuencia de visitas", tipo: "seleccion", requerido: true, defecto: "mensual", opciones: [["semanal", "Semanal"], ["quincenal", "Quincenal"], ["mensual", "Mensual"], ["bimestral", "Bimestral"], ["trimestral", "Trimestral"]] },
+      { campo: "cuota_mensual", etiqueta: "Cuota mensual (sin ITBIS)", tipo: "dinero", requerido: true },
+      { campo: "dia_facturacion", etiqueta: "Día de facturación", tipo: "numero", defecto: 1, ayuda: "Del 1 al 28" },
+      { campo: "fecha_inicio", etiqueta: "Fecha de inicio", tipo: "fecha", requerido: true },
+      { campo: "fecha_fin", etiqueta: "Fecha de vencimiento", tipo: "fecha" },
+      { campo: "vendedor_id", etiqueta: "Vendedor", tipo: "relacion", relacion: VENDEDOR },
+      { campo: "incluye_insumos", etiqueta: "Qué incluye la cuota", tipo: "textarea", ancho: "completo" },
+      { campo: "estado", etiqueta: "Estado", tipo: "seleccion", defecto: "vigente", opciones: [["borrador", "Borrador"], ["vigente", "Vigente"], ["por_renovar", "Por renovar"], ["suspendida", "Suspendida"], ["cancelada", "Cancelada"]] },
+    ],
+  },
   // Membrete de cotizaciones, facturas, conduces, órdenes y recibos (solo administrador).
   "config/empresa": {
     tabla: "empresa",

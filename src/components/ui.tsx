@@ -29,7 +29,7 @@ export function Kpi({ titulo, valor, detalle, tono: t = "off" }: { titulo: strin
   return (
     <div className="card flex flex-col gap-1 px-4 py-3.5">
       <span className="text-xs text-osmos-muted">{titulo}</span>
-      <span className="text-2xl font-bold tabular-nums text-osmos-navy">{valor}</span>
+      <span className="whitespace-nowrap text-xl font-bold tabular-nums text-osmos-navy 2xl:text-2xl">{valor}</span>
       {detalle ? <span className={`text-xs font-semibold ${SUB_TONO[t]}`}>{detalle}</span> : null}
     </div>
   );
