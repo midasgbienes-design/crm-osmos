@@ -23,6 +23,7 @@ En el proyecto de Supabase (`https://oshmqvbvwlvjsecyoxaw.supabase.co`):
    4. `20261103000400_datos_base.sql`
    5. `20261103000500_codigos_automaticos.sql`
    6. `20261103000600_fase2_cotizaciones_y_servicio.sql`
+   7. `20261104000100_documentos_tableros_avisos.sql`
 3. *(Opcional, para probar)* ejecute `supabase/seed_demo.sql`, que carga clientes, igualas, equipos y facturas de ejemplo.
    Para borrarlos después, ejecute `supabase/limpiar_demo.sql`.
 
@@ -134,6 +135,40 @@ y porcentajes de comisión (tabla `parametros`, `esquemas_comision` y `cuentas_c
 
 ---
 
+### 6. Usuarios y contraseñas
+
+- Los usuarios se crean en **Configuración → Usuarios y roles** (solo administrador).
+  Requiere que en Supabase → **Authentication → Sign In / Providers** esté activo *Allow new users to sign up*.
+  Un registro nuevo entra sin acceso (rol *consulta*) hasta que el administrador le asigna un rol.
+- Para que funcionen los enlaces de «¿Olvidó su contraseña?», en Supabase → **Authentication → URL Configuration**:
+  *Site URL* `https://crm.osmos.do` y en *Redirect URLs* agregue `https://crm.osmos.do/**`.
+- Cada persona cambia su contraseña en **Mi cuenta** (clic en su nombre, arriba a la derecha).
+
+## Operación segura
+
+**Verificación antes de publicar.** Cada cambio en `main` ejecuta la acción *Publicar sitio para Hostinger*,
+que primero aplica todas las migraciones en una base de datos de prueba vacía, carga los datos de demostración,
+prueba las funciones principales, revisa el código y compila. Si algo falla no se publica nada.
+
+**Publicación automática por FTP (recomendado).** Evita subir el ZIP a mano. En GitHub →
+**Settings → Secrets and variables → Actions** cree `FTP_SERVER`, `FTP_USERNAME` y `FTP_PASSWORD`
+(Hostinger → Archivos → Cuentas FTP; use una cuenta FTP limitada a `public_html/crm`). La subida nunca toca `config.js`.
+
+**Respaldo de la base de datos.** La acción *Respaldo de base de datos* exporta la base cada domingo, cifrada.
+Cree los secretos `SUPABASE_DB_URL` (Supabase → Connect → Session pooler) y `BACKUP_PASSPHRASE`
+(frase de 20+ caracteres guardada fuera de GitHub). Los respaldos quedan 30 días en la pestaña Actions.
+Supabase además guarda respaldos diarios en los planes pagos. Antes de ejecutar una migración nueva,
+descargue un respaldo.
+
+**Ambiente de pruebas.** Para probar cambios grandes sin tocar los datos reales:
+1. Cree un segundo proyecto en Supabase (ej. *osmos-pruebas*) y ejecute ahí las migraciones y `seed_demo.sql`.
+2. En Hostinger cree la carpeta `public_html/crm/pruebas` (o un subdominio `pruebas-crm.osmos.do`),
+   extraiga el mismo ZIP y ponga un `config.js` con la URL y la clave anon del proyecto de pruebas.
+3. Pruebe ahí primero; cuando todo esté bien, aplique la migración en el proyecto real.
+
+**Repositorio.** El repositorio `crm-osmos` es público: el código se ve, pero no contiene claves ni datos.
+Si prefiere que no se vea, cámbielo a privado en GitHub → Settings → General → Danger Zone.
+
 ## Desarrollo local
 
 ```bash
@@ -152,6 +187,12 @@ base instalada, origen y conversión) y consulta de todas las funciones de los d
 **Fase 2 (lista):** cotizador con márgenes y aprobación de gerencia, ciclo de la cotización hasta
 pedido y factura; igualas (alta, equipos cubiertos, visitas, órdenes y facturas); órdenes de servicio
 con insumos que descuentan inventario y actualizan la base instalada, y facturación de insumos.
+
+**Fase 3 (lista):** documentos imprimibles en PDF con membrete (cotización, factura con NCF, conduce,
+orden de servicio y recibo); búsqueda, filtros, orden, totales y exportación a Excel en todas las listas;
+tableros de gerencia (ventas contra meta, cartera por antigüedad, rentabilidad de igualas y flujo de caja
+proyectado); importación desde Excel con plantilla y validación; usuarios y roles, historial de cambios y
+parámetros; avisos del día con recordatorios por WhatsApp y correo; verificación automática y respaldos.
 
 **Próximas fases:** recibos y cobranza, compras y recepción, cuentas por pagar y pagos, nómina,
 asientos contables automáticos, reportes DGII 606/607, facturación electrónica e-CF, aplicación

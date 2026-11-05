@@ -375,13 +375,16 @@ export default function Imprimir() {
           <Aviso tono="warn">Faltan datos de la empresa (RNC o teléfono) en el membrete. {admin ? "Complételos en «Datos de la empresa»." : "Pida al administrador que los complete."}</Aviso>
         </div>
       ) : null}
-      <article className="hoja relative mx-auto w-full max-w-[816px] bg-white p-10 shadow-sm print:max-w-none print:p-0 print:shadow-none">
+      {/* En el teléfono la hoja conserva su ancho y se desplaza de lado */}
+      <div className="overflow-x-auto print:overflow-visible">
+      <article className="hoja relative mx-auto w-full min-w-[640px] max-w-[816px] bg-white p-10 shadow-sm print:min-w-0 print:max-w-none print:p-0 print:shadow-none">
         {sello ? <Sello texto={sello} /> : null}
         {contenido}
         <footer className="mt-8 border-t border-osmos-line pt-2 text-center text-[10px] text-osmos-muted">
-          {e?.razon_social ?? "Osmos Tecnología del Agua"} · Documento generado el {formatoFecha(new Date().toISOString())}
+          {e?.razon_social ?? "Osmos Tecnología del Agua"} · Documento generado el {formatoFecha(new Date().toLocaleDateString("sv-SE"))}
         </footer>
       </article>
+      </div>
     </>
   );
 }

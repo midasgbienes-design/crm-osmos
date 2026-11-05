@@ -27,7 +27,7 @@ const diaMes = (f: string) => `${f.slice(8, 10)}/${f.slice(5, 7)}`;
 
 function Panel({ titulo, detalle, children, accion }: { titulo: string; detalle?: string; children: React.ReactNode; accion?: React.ReactNode }) {
   return (
-    <section className="card flex flex-col gap-3 p-4">
+    <section className="card flex min-w-0 flex-col gap-3 p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-sm font-bold text-osmos-navy">{titulo}</h2>
@@ -107,14 +107,14 @@ export default function Tableros() {
               accion={<button type="button" onClick={() => setVerTabla((v) => !v)} className="text-xs font-bold text-osmos-navy2 underline print:hidden">{verTabla ? "Ver gráfico" : "Ver tabla"}</button>}
             >
               {verTabla ? (
-                <table className="w-full text-[13px]">
+                <div className="overflow-x-auto"><table className="w-full text-[13px]">
                   <thead><tr><th className="th">Mes</th><th className="th text-right">Facturado</th><th className="th text-right">Cobrado</th></tr></thead>
                   <tbody>
                     {t.meses.map((m) => (
                       <tr key={m.mes}><td className="td">{formatoMes(m.mes)}</td><td className="td text-right tabular-nums">{formatoDinero(m.facturado)}</td><td className="td text-right tabular-nums">{formatoDinero(m.cobrado)}</td></tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               ) : (
                 <BarrasAgrupadas
                   titulo="Facturado y cobrado por mes"
@@ -188,7 +188,7 @@ export default function Tableros() {
                 ))}
               </ul>
               <h3 className="mt-2 text-xs font-bold text-osmos-muted">Clientes con mayor saldo</h3>
-              <table className="w-full text-[12px]">
+              <div className="overflow-x-auto"><table className="w-full text-[12px]">
                 <thead><tr><th className="th">Cliente</th><th className="th text-right">Saldo</th><th className="th text-right">Vencido</th></tr></thead>
                 <tbody>
                   {t.deudores.length === 0 ? <tr><td colSpan={3} className="td text-osmos-muted">No hay saldos pendientes.</td></tr> : null}
@@ -200,7 +200,7 @@ export default function Tableros() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </Panel>
           </div>
 

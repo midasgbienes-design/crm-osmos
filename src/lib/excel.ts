@@ -41,6 +41,6 @@ export async function leerExcel(archivo: File): Promise<unknown[][]> {
 }
 
 export function nombreArchivo(texto: string) {
-  const hoy = new Date().toISOString().slice(0, 10);
-  return `${texto.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w-]+/g, "_")}_${hoy}`;
+  const hoy = new Date().toLocaleDateString("sv-SE");
+  return `${texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]+/g, "_")}_${hoy}`;
 }

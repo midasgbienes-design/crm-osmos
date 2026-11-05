@@ -30,7 +30,7 @@ export type Serie = { nombre: string; color: string; valores: number[] };
 export function BarrasAgrupadas({ categorias, series, alto = 220, titulo }: { categorias: string[]; series: Serie[]; alto?: number; titulo: string }) {
   const [activo, setActivo] = useState<number | null>(null);
   const ancho = 680;
-  const m = { arriba: 12, derecha: 8, abajo: 26, izquierda: 52 };
+  const m = { arriba: 12, derecha: 8, abajo: 30, izquierda: 60 };
   const w = ancho - m.izquierda - m.derecha;
   const h = alto - m.arriba - m.abajo;
   const max = Math.max(0, ...series.flatMap((s) => s.valores));
@@ -55,7 +55,7 @@ export function BarrasAgrupadas({ categorias, series, alto = 220, titulo }: { ca
         {pasos.map((p) => (
           <g key={p}>
             <line x1={m.izquierda} x2={ancho - m.derecha} y1={y(p)} y2={y(p)} stroke="#E4E8F0" strokeWidth={1} />
-            <text x={m.izquierda - 6} y={y(p) + 4} textAnchor="end" fontSize={11} fill="#4A5A7E">{compacto(p)}</text>
+            <text x={m.izquierda - 6} y={y(p) + 4} textAnchor="end" fontSize={14} fill="#4A5A7E">{compacto(p)}</text>
           </g>
         ))}
         {categorias.map((c, i) => {
@@ -71,7 +71,7 @@ export function BarrasAgrupadas({ categorias, series, alto = 220, titulo }: { ca
                   <path key={s.nombre} d={`M${x},${m.arriba + h} v${-Math.max(0, alto0 - 3)} q0,-3 3,-3 h${barra - 6} q3,0 3,3 v${Math.max(0, alto0 - 3)} z`} fill={s.color} />
                 ) : null;
               })}
-              <text x={m.izquierda + i * banda + banda / 2} y={alto - 8} textAnchor="middle" fontSize={11} fill="#4A5A7E">{c}</text>
+              <text x={m.izquierda + i * banda + banda / 2} y={alto - 9} textAnchor="middle" fontSize={14} fill="#4A5A7E">{c}</text>
             </g>
           );
         })}

@@ -144,7 +144,7 @@ function comparar(col: Columna, a: Fila, b: Fila) {
   return textoCelda(col, a).localeCompare(textoCelda(col, b), "es", { numeric: true, sensitivity: "base" });
 }
 
-const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const sinAcentos = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 export function TablaInteractiva({
   columnas,

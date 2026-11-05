@@ -27,7 +27,7 @@ export default function Parametros() {
       return;
     }
     if (n === Number(p.valor)) return;
-    const { error } = await supabase().from("parametros").update({ valor: n, vigente_desde: new Date().toISOString().slice(0, 10) }).eq("clave", p.clave);
+    const { error } = await supabase().from("parametros").update({ valor: n, vigente_desde: new Date().toLocaleDateString("sv-SE") }).eq("clave", p.clave);
     setAviso(error ? { tono: "bad", texto: error.message } : { tono: "ok", texto: `${p.descripcion ?? p.clave}: ahora es ${n}.` });
     recargar();
   };

@@ -38,7 +38,7 @@ export function VistaSeccion({ modulo, seccion }: { modulo: string; seccion: str
   const ejecutar = async (rpc: string, etiqueta: string, conPeriodo: boolean) => {
     setOcupado(rpc);
     setAviso(null);
-    const args = conPeriodo ? { p_periodo: new Date().toISOString().slice(0, 10) } : {};
+    const args = conPeriodo ? { p_periodo: new Date().toLocaleDateString("sv-SE") } : {};
     const { data, error } = await supabase().rpc(rpc, args);
     setOcupado(null);
     if (error) {

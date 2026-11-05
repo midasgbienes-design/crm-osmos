@@ -22,8 +22,8 @@ export default function NuevaIguala() {
     return { clientes: (c.data ?? []) as { id: string; nombre: string }[], vendedores: (v.data ?? []) as { id: string; nombre: string }[] };
   }, []);
 
-  const hoy = new Date().toISOString().slice(0, 10);
-  const enUnAnio = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
+  const hoy = new Date().toLocaleDateString("sv-SE");
+  const enUnAnio = new Date(Date.now() + 365 * 86400000).toLocaleDateString("sv-SE");
 
   const crear = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

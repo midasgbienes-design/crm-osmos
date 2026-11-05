@@ -134,7 +134,7 @@ export default function NuevaOrden() {
                 {[["preventivo", "Preventivo"], ["correctivo", "Correctivo"], ["instalacion", "Instalación"], ["garantia", "Garantía"], ["analisis", "Toma de muestra / análisis"]].map(([v, t]) => <option key={v} value={v}>{t}</option>)}
               </select>
             </div>
-            <div><label className="label" htmlFor="fecha">Fecha</label><input id="fecha" name="fecha" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className="input" /></div>
+            <div><label className="label" htmlFor="fecha">Fecha</label><input id="fecha" name="fecha" type="date" defaultValue={new Date().toLocaleDateString("sv-SE")} className="input" /></div>
             <div>
               <label className="label" htmlFor="tecnico_id">Técnico</label>
               <select id="tecnico_id" name="tecnico_id" className="input">

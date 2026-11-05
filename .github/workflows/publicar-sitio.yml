@@ -1,4 +1,10 @@
-# Genera el sitio estático del CRM cada vez que hay cambios en main.
+# Verifica y genera el sitio estático del CRM cada vez que hay cambios en main.
+#
+# Antes de publicar se comprueba que:
+#   - todas las migraciones de base de datos se aplican sin errores en un PostgreSQL limpio,
+#   - los datos de demostración cargan y las funciones principales responden,
+#   - el código pasa la revisión (lint) y el sitio compila.
+# Si algo falla, NO se publica nada y el sitio actual sigue igual.
 #
 # Resultado:
 #   1. Un ZIP listo para subir a Hostinger en GitHub → Releases → "Sitio para Hostinger".
@@ -17,7 +23,49 @@ permissions:
   contents: write
 
 jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: pruebas
+          POSTGRES_DB: osmos
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: pruebas
+      PGDATABASE: osmos
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aplicar migraciones en una base de datos de prueba
+        run: |
+          psql -v ON_ERROR_STOP=1 -q -f supabase/pruebas/auth_simulado.sql
+          for f in supabase/migrations/*.sql; do
+            echo "→ $f"
+            psql -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+
+      - name: Cargar datos de demostración y pruebas rápidas
+        run: |
+          psql -v ON_ERROR_STOP=1 -q -f supabase/seed_demo.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/pruebas/humo.sql
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+
   publicar:
+    needs: verificar
     runs-on: ubuntu-latest
     env:
       FTP_SERVER: ${{ secrets.FTP_SERVER }}
@@ -54,3 +102,8 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./out/
           server-dir: ${{ vars.FTP_DIR || 'domains/osmos.do/public_html/crm/' }}
+          # Nunca borra ni reemplaza la configuración ni los archivos del servidor que no son del sitio.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            config.js

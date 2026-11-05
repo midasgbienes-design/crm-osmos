@@ -1,0 +1,59 @@
+# Respaldo semanal de la base de datos de Supabase (y manual cuando quiera).
+#
+# El repositorio es PÚBLICO, por eso el respaldo se cifra antes de guardarlo.
+# Sin estos dos secretos no hace nada:
+#   SUPABASE_DB_URL     Cadena de conexión: Supabase → Connect → Session pooler (incluye la contraseña de la base de datos)
+#   BACKUP_PASSPHRASE   Frase larga para cifrar el respaldo (guárdela fuera de GitHub; sin ella no se puede abrir)
+#
+# Para restaurar:  gpg --decrypt respaldo.sql.gz.gpg | gunzip | psql "<cadena de conexión>"
+name: Respaldo de base de datos
+
+on:
+  schedule:
+    - cron: "17 9 * * 0" # domingos 5:17 a. m. hora de RD
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Comprobar secretos
+        id: listo
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ ${#BACKUP_PASSPHRASE} -lt 20 ]; then
+            echo "Falta SUPABASE_DB_URL o BACKUP_PASSPHRASE (mínimo 20 caracteres). No se hace respaldo."
+            echo "ok=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=si" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Instalar cliente de PostgreSQL 17
+        if: steps.listo.outputs.ok == 'si'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Exportar y cifrar
+        if: steps.listo.outputs.ok == 'si'
+        run: |
+          fecha=$(date +%Y-%m-%d)
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" --schema=public --no-owner --no-privileges \
+            | gzip -9 \
+            | gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase "$BACKUP_PASSPHRASE" -o "osmos-respaldo-$fecha.sql.gz.gpg"
+          ls -lh osmos-respaldo-*.gpg
+
+      - name: Guardar respaldo (30 días)
+        if: steps.listo.outputs.ok == 'si'
+        uses: actions/upload-artifact@v4
+        with:
+          name: osmos-respaldo
+          path: osmos-respaldo-*.sql.gz.gpg
+          retention-days: 30

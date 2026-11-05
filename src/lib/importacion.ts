@@ -23,7 +23,7 @@ export const IMPORTABLES: Importable[] = [
   { clave: "rrhh/empleados", titulo: "Colaboradores", descripcion: "Empleados con cédula, cargo y salario.", duplicado: [["cedula"], ["nombre"]], excluir: ["perfil_id"] },
 ];
 
-export const quitarAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+export const quitarAcentos = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 export function camposDe(imp: Importable): Campo[] {
   return FORMULARIOS[imp.clave].campos.filter((c) => !(imp.excluir ?? []).includes(c.campo));
