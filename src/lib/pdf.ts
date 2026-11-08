@@ -11,6 +11,7 @@ const COLORES_FRANJA: [number, number, string][] = [[0, 0.82, "#00246A"], [0.82,
 async function imagenDatos(src: string): Promise<{ datos: string; ancho: number; alto: number } | null> {
   try {
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.src = src;
     await img.decode();
     const c = document.createElement("canvas");
@@ -91,6 +92,7 @@ export async function descargarPdf(elemento: HTMLElement, nombre: string) {
 
   const agua = elemento.querySelector<HTMLImageElement>("[data-pdf=agua]");
   const marca = agua ? await imagenDatos(agua.currentSrc || agua.src) : null;
+  const opacidad = Number(agua?.dataset.opacidad ?? 0.06) || 0.06;
   const franja = elemento.querySelector("[data-pdf=franja]") ? FRANJA * k : 0;
 
   const pdf = new jsPDF({ unit: "pt", format: "letter", compress: true });
@@ -118,7 +120,7 @@ export async function descargarPdf(elemento: HTMLElement, nombre: string) {
       const cx = (ANCHO_HOJA / 2 + FRANJA / 2) * k;
       const cy = CARTA.alto * 0.55;
       pdf.saveGraphicsState();
-      pdf.setGState(new GState({ opacity: 0.05 }));
+      pdf.setGState(new GState({ opacity: opacidad }));
       pdf.addImage(marca.datos, "PNG", cx - w / 2, cy - h / 2, w, h);
       pdf.restoreGraphicsState();
     }

@@ -7,7 +7,14 @@ export type Empresa = {
   razon_social: string; nombre_comercial: string; rnc: string | null; direccion: string | null; ciudad: string | null;
   telefono: string | null; email: string | null; sitio_web: string | null; whatsapp: string | null;
   condiciones_cotizacion: string | null; condiciones_factura: string | null; instrucciones_pago: string | null;
+  // Apariencia (Configuración → Apariencia de documentos)
+  logo_url?: string | null; marca_agua_url?: string | null; firma_url?: string | null;
+  marca_agua_visible?: boolean | null; marca_agua_opacidad?: number | null;
+  lema?: string | null; pie_documentos?: string | null; subtitulo_cotizacion?: string | null;
 };
+
+export const LOGO_PREDETERMINADO = "/osmos-wordmark.png";
+export const MARCA_PREDETERMINADA = "/osmos-rombo-agua.png";
 export type Parte = { nombre?: string | null; empresa?: string | null; rnc_cedula?: string | null; direccion?: string | null; ciudad?: string | null; telefono?: string | null; email?: string | null };
 export type Linea = { descripcion: string; cantidad: number; precio?: number; descuento_pct?: number; itbis?: number; total?: number; nota?: string };
 export type Par = [string, string];
@@ -19,7 +26,8 @@ export function Membrete({ empresa, titulo, subtitulo }: { empresa: Empresa | nu
     <header className="flex items-start justify-between gap-6">
       <div className="flex flex-col">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/osmos-wordmark.png" alt="Osmos" className="h-auto w-[170px]" />
+        <img src={e?.logo_url || LOGO_PREDETERMINADO} alt={e?.nombre_comercial ?? "Osmos"} crossOrigin="anonymous" className="h-auto max-h-[80px] w-auto max-w-[200px] self-start object-contain" />
+        {e?.lema ? <span className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.18em] text-osmos-teal">{e.lema}</span> : null}
         <span className="mt-2.5 text-[11px] leading-[17px] text-osmos-muted">
           <strong className="text-[12.5px] text-osmos-navy">{e?.razon_social ?? "Osmos Tecnología del Agua"}</strong>
           <br />
@@ -159,12 +167,16 @@ export function Notas({ titulo, texto, className = "mt-4" }: { titulo: string; t
   );
 }
 
-export function Firmas({ izquierda, derecha }: { izquierda: string; derecha: string }) {
+// Firmas al pie. Si hay una firma o sello cargado, aparece sobre la línea de Osmos (izquierda).
+export function Firmas({ izquierda, derecha, firma }: { izquierda: string; derecha: string; firma?: string | null }) {
   return (
-    <section className="mt-auto grid grid-cols-2 gap-16 break-inside-avoid pb-6 pt-14 text-center text-[11px] text-osmos-muted">
-      {[izquierda, derecha].map((t) => (
-        <div key={t} className="border-t border-osmos-ink pt-1.5">{t}</div>
-      ))}
+    <section className="mt-auto grid grid-cols-2 items-end gap-16 break-inside-avoid pb-6 pt-14 text-center text-[11px] text-osmos-muted">
+      <div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {firma ? <img src={firma} alt="Firma" crossOrigin="anonymous" className="mx-auto -mb-2 h-[64px] w-auto max-w-[220px] object-contain" /> : null}
+        <div className="border-t border-osmos-ink pt-1.5">{izquierda}</div>
+      </div>
+      <div className="border-t border-osmos-ink pt-1.5">{derecha}</div>
     </section>
   );
 }
@@ -178,8 +190,9 @@ export function Sello({ texto }: { texto: string }) {
 }
 
 // La hoja completa: franja lateral, marca de agua, contenido y pie.
-export function Hoja({ hojaRef, sello, empresa, children }: { hojaRef: React.Ref<HTMLElement>; sello: string | null; empresa: Empresa | null; children: React.ReactNode }) {
+export function Hoja({ hojaRef, sello, empresa, children }: { hojaRef?: React.Ref<HTMLElement>; sello: string | null; empresa: Empresa | null; children: React.ReactNode }) {
   const hoy = new Date().toLocaleDateString("sv-SE").split("-").reverse().join("/");
+  const opacidad = Number(empresa?.marca_agua_opacidad ?? 6) / 100;
   return (
     <>
       {/* Impresión sin márgenes del navegador: la hoja trae los suyos y la franja llega al borde */}
@@ -189,19 +202,24 @@ export function Hoja({ hojaRef, sello, empresa, children }: { hojaRef: React.Ref
         className="hoja relative mx-auto flex min-h-[1056px] w-full min-w-[640px] max-w-[816px] overflow-hidden bg-white shadow-sm print:min-h-[11in] print:min-w-0 print:max-w-none print:overflow-visible print:shadow-none"
       >
         <div data-pdf="franja" aria-hidden="true" className="w-[34px] shrink-0 bg-[linear-gradient(180deg,#00246A_0_82%,#0093A5_82%_94%,#D3D200_94%_100%)] print:fixed print:bottom-0 print:left-0 print:top-0" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          data-pdf="agua"
-          src="/osmos-rombo-agua.png"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute left-[calc(50%+17px)] top-[55%] w-[600px] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.06] print:fixed"
-        />
+        {empresa?.marca_agua_visible !== false ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            data-pdf="agua"
+            data-opacidad={opacidad}
+            src={empresa?.marca_agua_url || MARCA_PREDETERMINADA}
+            alt=""
+            aria-hidden="true"
+            crossOrigin="anonymous"
+            style={{ opacity: opacidad }}
+            className="pointer-events-none absolute left-[calc(50%+17px)] top-[55%] w-[600px] max-w-none -translate-x-1/2 -translate-y-1/2 print:fixed"
+          />
+        ) : null}
         {sello ? <Sello texto={sello} /> : null}
         <div className="relative z-[1] flex min-w-0 flex-1 flex-col pl-11 pr-12 pt-11 print:ml-[34px]">
           {children}
           <footer className="flex justify-between border-t border-osmos-line pb-5 pt-3 text-[10.5px] text-osmos-muted">
-            <span>Gracias por confiar en {empresa?.nombre_comercial ?? "Osmos"}.</span>
+            <span>{empresa?.pie_documentos ?? `Gracias por confiar en ${empresa?.nombre_comercial ?? "Osmos"}.`}</span>
             <span>{[empresa?.sitio_web, `Generado el ${hoy}`].filter(Boolean).join(" · ")}</span>
           </footer>
         </div>

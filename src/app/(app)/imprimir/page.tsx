@@ -116,7 +116,7 @@ export default function Imprimir() {
     if (["rechazada", "vencida"].includes(String(d.estado))) sello = etiqueta(d.estado);
     contenido = (
       <>
-        <Membrete empresa={e} titulo="Cotización" subtitulo="Propuesta comercial" />
+        <Membrete empresa={e} titulo="Cotización" subtitulo={e?.subtitulo_cotizacion ?? "Propuesta comercial"} />
         <Datos items={[["Cotización", String(d.numero)], ["Fecha", formatoFecha(d.fecha)], ["Válida hasta", formatoFecha(d.vence)], ["Vendedor", vendedor]]} />
         <Destinatario p={cliente ?? p} titulo={cliente ? "Preparada para" : "Para"} />
         <TablaLineas lineas={lineas} precios />
@@ -124,7 +124,7 @@ export default function Imprimir() {
           <Notas titulo="Notas" texto={d.notas} className="mt-3" />
           <Notas titulo="Condiciones" texto={e?.condiciones_cotizacion} className="mt-3" />
         </Totales>
-        <Firmas izquierda={`Preparado por · ${vendedor !== "—" ? vendedor : e?.nombre_comercial ?? "Osmos"}`} derecha="Aceptado por el cliente · Nombre y fecha" />
+        <Firmas firma={e?.firma_url} izquierda={`Preparado por · ${vendedor !== "—" ? vendedor : e?.nombre_comercial ?? "Osmos"}`} derecha="Aceptado por el cliente · Nombre y fecha" />
       </>
     );
   } else if (doc === "factura") {
@@ -152,7 +152,7 @@ export default function Imprimir() {
           <Notas titulo="Forma de pago" texto={[e?.instrucciones_pago, e?.condiciones_factura].filter(Boolean).join("\n")} className="mt-3" />
           <Notas titulo="Notas" texto={d.notas} className="mt-3" />
         </Totales>
-        <Firmas izquierda="Despachado por" derecha="Recibido conforme · Nombre y fecha" />
+        <Firmas firma={e?.firma_url} izquierda="Despachado por" derecha="Recibido conforme · Nombre y fecha" />
       </>
     );
   } else if (doc === "conduce") {
@@ -164,7 +164,7 @@ export default function Imprimir() {
         <Destinatario p={cliente} titulo="Entregar a" tituloExtra="Entrega" extra={[["Técnico / chofer", String(datos.extra.tecnico ?? "—")], ["Vendedor", vendedor]]} />
         <TablaLineas lineas={cot?.cotizacion_lineas ?? []} precios={false} />
         <p className="mt-4 text-[11px] text-osmos-muted">El cliente declara recibir los artículos descritos en buen estado. Este documento no es un comprobante fiscal.</p>
-        <Firmas izquierda="Entregado por" derecha="Recibido por · Cédula · Fecha" />
+        <Firmas firma={e?.firma_url} izquierda="Entregado por" derecha="Recibido por · Cédula · Fecha" />
       </>
     );
   } else if (doc === "orden") {
@@ -191,7 +191,7 @@ export default function Imprimir() {
         <Notas titulo="Observaciones" texto={d.observaciones} />
         <h4 className="mb-1 mt-5 text-[10px] font-bold uppercase tracking-[0.12em] text-osmos-navy">Insumos y repuestos utilizados</h4>
         <TablaLineas lineas={insumos} precios={false} />
-        <Firmas izquierda="Técnico de Osmos" derecha="Conforme el cliente · Nombre y fecha" />
+        <Firmas firma={e?.firma_url} izquierda="Técnico de Osmos" derecha="Conforme el cliente · Nombre y fecha" />
       </>
     );
   } else if (doc === "recibo") {
@@ -235,7 +235,7 @@ export default function Imprimir() {
           </tbody>
         </table>
         <Totales filas={[["Aplicado a facturas", d.aplicado], ["Total recibido", d.monto, true]]} />
-        <Firmas izquierda="Recibido por · Osmos" derecha="Entregado por el cliente" />
+        <Firmas firma={e?.firma_url} izquierda="Recibido por · Osmos" derecha="Entregado por el cliente" />
       </>
     );
   }

@@ -24,6 +24,7 @@ En el proyecto de Supabase (`https://oshmqvbvwlvjsecyoxaw.supabase.co`):
    5. `20261103000500_codigos_automaticos.sql`
    6. `20261103000600_fase2_cotizaciones_y_servicio.sql`
    7. `20261104000100_documentos_tableros_avisos.sql`
+   8. `20261108000100_apariencia_documentos.sql` (logo, marca de agua y firma; crea la carpeta de imágenes «marca» en Storage)
 3. *(Opcional, para probar)* ejecute `supabase/seed_demo.sql`, que carga clientes, igualas, equipos y facturas de ejemplo.
    Para borrarlos después, ejecute `supabase/limpiar_demo.sql`.
 

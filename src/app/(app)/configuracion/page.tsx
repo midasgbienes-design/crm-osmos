@@ -9,6 +9,7 @@ import { useSesion } from "@/components/sesion";
 
 const OPCIONES = [
   { href: "/editar/?f=config/empresa&id=1", titulo: "Datos de la empresa", texto: "RNC, dirección, teléfonos y condiciones que salen en cotizaciones y facturas.", solo: "admin" },
+  { href: "/configuracion/documentos/", titulo: "Apariencia de documentos", texto: "Logo, marca de agua, firma y textos de cotizaciones, facturas y recibos, con vista previa.", solo: "admin" },
   { href: "/configuracion/usuarios/", titulo: "Usuarios y roles", texto: "Quién entra al sistema y qué puede ver o modificar cada persona.", solo: "admin" },
   { href: "/configuracion/auditoria/", titulo: "Historial de cambios", texto: "Quién creó, modificó o borró cada registro, con el antes y el después.", solo: "admin" },
   { href: "/configuracion/importar/", titulo: "Importar desde Excel", texto: "Cargue clientes, equipos, igualas, productos y suplidores desde una plantilla.", solo: "gerencia" },
