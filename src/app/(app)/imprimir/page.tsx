@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { descargarPdf } from "@/lib/pdf";
 import { supabase } from "@/lib/supabase/cliente";
 import { useDatos } from "@/lib/usar-datos";
 import { etiqueta, formatoDinero, formatoFecha, formatoNumero, numeroEnLetras } from "@/lib/formato";
@@ -129,7 +130,7 @@ function TablaLineas({ lineas, precios }: { lineas: Linea[]; precios: boolean })
       <thead>
         <tr className="bg-osmos-navy text-white">
           {cab.map((h, i) => (
-            <th key={h} className={`px-2 py-1.5 text-left font-semibold ${precios && i > 1 ? "text-right" : ""}`}>{h}</th>
+            <th key={h} className={`whitespace-nowrap px-2 py-1.5 text-left font-semibold ${precios && i > 1 ? "text-right" : ""}`}>{h}</th>
           ))}
         </tr>
       </thead>
@@ -144,10 +145,10 @@ function TablaLineas({ lineas, precios }: { lineas: Linea[]; precios: boolean })
               <td className={`px-2 py-1.5 align-top tabular-nums ${precios ? "text-right" : ""}`}>{formatoNumero(l.cantidad)}</td>
               {precios ? (
                 <>
-                  <td className="px-2 py-1.5 text-right align-top tabular-nums">{formatoDinero(l.precio)}</td>
-                  <td className="px-2 py-1.5 text-right align-top tabular-nums">{Number(l.descuento_pct ?? 0) ? `${formatoNumero(l.descuento_pct)}%` : "—"}</td>
-                  <td className="px-2 py-1.5 text-right align-top tabular-nums">{formatoDinero(l.itbis)}</td>
-                  <td className="px-2 py-1.5 text-right align-top font-semibold tabular-nums">{formatoDinero(l.total)}</td>
+                  <td className="px-2 py-1.5 whitespace-nowrap text-right align-top tabular-nums">{formatoDinero(l.precio)}</td>
+                  <td className="px-2 py-1.5 whitespace-nowrap text-right align-top tabular-nums">{Number(l.descuento_pct ?? 0) ? `${formatoNumero(l.descuento_pct)}%` : "—"}</td>
+                  <td className="px-2 py-1.5 whitespace-nowrap text-right align-top tabular-nums">{formatoDinero(l.itbis)}</td>
+                  <td className="px-2 py-1.5 whitespace-nowrap text-right align-top font-semibold tabular-nums">{formatoDinero(l.total)}</td>
                 </>
               ) : (
                 <td className="px-2 py-1.5 align-top text-osmos-muted">{l.nota ?? ""}</td>
@@ -211,6 +212,21 @@ export default function Imprimir() {
   const doc = sp.get("doc") ?? "";
   const id = sp.get("id") ?? "";
   const { datos, error, cargando } = useDatos(() => cargarDocumento(doc, id), [doc, id]);
+  const hoja = useRef<HTMLElement>(null);
+  const [bajando, setBajando] = useState(false);
+  const [errorPdf, setErrorPdf] = useState<string | null>(null);
+  const bajarPdf = async () => {
+    if (!hoja.current) return;
+    setBajando(true);
+    setErrorPdf(null);
+    try {
+      await descargarPdf(hoja.current, document.title);
+    } catch (e) {
+      setErrorPdf(`No se pudo generar el PDF (${e instanceof Error ? e.message : String(e)}). Use «Imprimir» y elija «Guardar como PDF».`);
+    } finally {
+      setBajando(false);
+    }
+  };
 
   const d = datos?.d;
   const titulos: Record<string, string> = { cotizacion: "Cotización", factura: "Factura", conduce: "Conduce", orden: "Orden de servicio", recibo: "Recibo de ingreso" };
@@ -366,9 +382,10 @@ export default function Imprimir() {
     <>
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <button type="button" onClick={() => router.back()} className="btn-secondary">← Volver</button>
-        <button type="button" onClick={() => window.print()} className="btn-primary">Imprimir / Guardar PDF</button>
+        <button type="button" onClick={bajarPdf} disabled={bajando} className="btn-primary">{bajando ? "Generando PDF…" : "Descargar PDF"}</button>
+        <button type="button" onClick={() => window.print()} className="btn-secondary">Imprimir</button>
         {admin ? <Link href={`/editar/?f=config/empresa&id=1&volver=${encodeURIComponent(`/imprimir/?doc=${doc}&id=${id}`)}`} className="btn-secondary">Datos de la empresa</Link> : null}
-        <span className="text-xs text-osmos-muted">Para PDF, elija «Guardar como PDF» como impresora.</span>
+        <span className="text-xs text-osmos-muted">El PDF se guarda en Descargas, listo para enviar por WhatsApp o correo.</span>
       </div>
       {faltaEmpresa ? (
         <div className="print:hidden">
@@ -377,7 +394,8 @@ export default function Imprimir() {
       ) : null}
       {/* En el teléfono la hoja conserva su ancho y se desplaza de lado */}
       <div className="overflow-x-auto print:overflow-visible">
-      <article className="hoja relative mx-auto w-full min-w-[640px] max-w-[816px] bg-white p-10 shadow-sm print:min-w-0 print:max-w-none print:p-0 print:shadow-none">
+      {errorPdf ? <div className="print:hidden"><Aviso tono="bad">{errorPdf}</Aviso></div> : null}
+      <article ref={hoja} className="hoja relative mx-auto w-full min-w-[640px] max-w-[816px] bg-white p-10 shadow-sm print:min-w-0 print:max-w-none print:p-0 print:shadow-none">
         {sello ? <Sello texto={sello} /> : null}
         {contenido}
         <footer className="mt-8 border-t border-osmos-line pt-2 text-center text-[10px] text-osmos-muted">

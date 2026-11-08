@@ -82,7 +82,7 @@ export default function DetalleCotizacion() {
         titulo={`Cotización ${c.numero}`}
         descripcion={`Para ${destinatario}`}
       >
-        <Link href={`/imprimir/?doc=cotizacion&id=${id}`} className="btn-secondary">Imprimir / PDF</Link>
+        <Link href={`/imprimir/?doc=cotizacion&id=${id}`} className="btn-secondary">PDF / Imprimir</Link>
         {editable ? <Link href={`/cotizacion/editar/?id=${id}`} className="btn-secondary">Editar</Link> : null}
         {pendiente && gerencia ? <Boton a="aprobar" texto="Aprobar descuento / margen" primario /> : null}
         {["borrador", "por_aprobar"].includes(estado) && !pendiente ? <Boton a="enviar" texto="Marcar como enviada" primario /> : null}
