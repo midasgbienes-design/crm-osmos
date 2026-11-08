@@ -6,27 +6,22 @@ import { useEffect, useRef, useState } from "react";
 import { descargarPdf } from "@/lib/pdf";
 import { supabase } from "@/lib/supabase/cliente";
 import { useDatos } from "@/lib/usar-datos";
-import { etiqueta, formatoDinero, formatoFecha, formatoNumero, numeroEnLetras } from "@/lib/formato";
+import { etiqueta, formatoDinero, formatoFecha, numeroEnLetras } from "@/lib/formato";
 import { Aviso } from "@/components/ui";
 import { Cargando } from "@/components/mensajes";
 import { useSesion } from "@/components/sesion";
+import { Datos, Destinatario, Firmas, Hoja, Membrete, Notas, TD, TH, TablaLineas, Totales, type Empresa, type Linea, type Par, type Parte } from "@/components/hoja-documento";
 
 type Fila = Record<string, unknown>;
-type Empresa = {
-  razon_social: string; nombre_comercial: string; rnc: string | null; direccion: string | null; ciudad: string | null;
-  telefono: string | null; email: string | null; sitio_web: string | null; whatsapp: string | null;
-  condiciones_cotizacion: string | null; condiciones_factura: string | null; instrucciones_pago: string | null;
-};
-type Parte = { nombre?: string | null; empresa?: string | null; rnc_cedula?: string | null; direccion?: string | null; ciudad?: string | null; telefono?: string | null; email?: string | null };
-type Linea = { descripcion: string; cantidad: number; precio?: number; descuento_pct?: number; itbis?: number; total?: number; nota?: string };
 
-const TITULO_NCF: Record<string, string> = {
-  B01: "Factura de Crédito Fiscal",
-  B02: "Factura de Consumo",
-  B14: "Factura de Régimen Especial",
-  B15: "Comprobante Gubernamental",
-  E31: "Factura de Crédito Fiscal Electrónica",
-  E32: "Factura de Consumo Electrónica",
+// Subtítulo bajo "FACTURA" según el tipo de comprobante.
+const TIPO_NCF: Record<string, string> = {
+  B01: "Crédito fiscal",
+  B02: "Consumo",
+  B14: "Régimen especial",
+  B15: "Gubernamental",
+  E31: "Crédito fiscal electrónica",
+  E32: "Consumo electrónica",
 };
 
 const CLIENTE = "nombre,rnc_cedula,direccion,ciudad,telefono,email";
@@ -64,145 +59,6 @@ async function cargarDocumento(doc: string, id: string) {
     throw new Error("Tipo de documento no reconocido.");
   }
   return { empresa, d, extra };
-}
-
-function Membrete({ empresa, titulo, numero, filas }: { empresa: Empresa | null; titulo: string; numero: string; filas: [string, string][] }) {
-  const e = empresa;
-  return (
-    <header className="flex items-start justify-between gap-6 border-b-[3px] border-osmos-navy pb-4">
-      <div className="flex flex-col gap-1">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/osmos-wordmark.png" alt="Osmos" className="mb-1 h-auto w-[150px]" />
-        <strong className="text-[13px] text-osmos-navy">{e?.razon_social ?? "Osmos Tecnología del Agua"}</strong>
-        <span className="text-[11px] leading-4 text-osmos-muted">
-          {e?.rnc ? <>RNC {e.rnc}<br /></> : null}
-          {[e?.direccion, e?.ciudad].filter(Boolean).join(", ")}
-          {e?.direccion || e?.ciudad ? <br /> : null}
-          {[e?.telefono && `Tel. ${e.telefono}`, e?.whatsapp && `WhatsApp ${e.whatsapp}`].filter(Boolean).join(" · ")}
-          {e?.telefono || e?.whatsapp ? <br /> : null}
-          {[e?.email, e?.sitio_web].filter(Boolean).join(" · ")}
-        </span>
-      </div>
-      <div className="min-w-[230px] text-right">
-        <h1 className="font-display text-[15px] uppercase leading-5 text-osmos-navy">{titulo}</h1>
-        <p className="mb-2 text-lg font-bold text-osmos-teal">{numero}</p>
-        <dl className="grid grid-cols-[auto_auto] justify-end gap-x-3 text-[11px]">
-          {filas.map(([k, v]) => (
-            <div key={k} className="contents">
-              <dt className="text-osmos-muted">{k}</dt>
-              <dd className="font-semibold">{v}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </header>
-  );
-}
-
-function Destinatario({ titulo = "Cliente", p, extra = [] }: { titulo?: string; p: Parte | null; extra?: [string, string][] }) {
-  const nombre = p?.empresa || p?.nombre || "—";
-  return (
-    <section className="grid grid-cols-2 gap-4 py-4 text-[12px]">
-      <div className="flex flex-col gap-0.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-osmos-muted">{titulo}</span>
-        <strong className="text-[13px]">{nombre}</strong>
-        {p?.empresa && p?.nombre ? <span>Atención: {p.nombre}</span> : null}
-        {p?.rnc_cedula ? <span>RNC / Cédula: {p.rnc_cedula}</span> : null}
-        {p?.direccion || p?.ciudad ? <span>{[p?.direccion, p?.ciudad].filter(Boolean).join(", ")}</span> : null}
-        {p?.telefono || p?.email ? <span>{[p?.telefono, p?.email].filter(Boolean).join(" · ")}</span> : null}
-      </div>
-      <dl className="grid grid-cols-[auto_1fr] content-start gap-x-3 gap-y-0.5">
-        {extra.map(([k, v]) => (
-          <div key={k} className="contents">
-            <dt className="text-osmos-muted">{k}</dt>
-            <dd className="font-semibold">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-  );
-}
-
-function TablaLineas({ lineas, precios }: { lineas: Linea[]; precios: boolean }) {
-  const cab = precios ? ["#", "Descripción", "Cant.", "Precio", "Desc.", "ITBIS", "Importe"] : ["#", "Descripción", "Cantidad", "Nota"];
-  return (
-    <table className="w-full border-collapse text-[12px]">
-      <thead>
-        <tr className="bg-osmos-navy text-white">
-          {cab.map((h, i) => (
-            <th key={h} className={`whitespace-nowrap px-2 py-1.5 text-left font-semibold ${precios && i > 1 ? "text-right" : ""}`}>{h}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {lineas.length === 0 ? (
-          <tr><td colSpan={cab.length} className="px-2 py-3 text-osmos-muted">Sin artículos.</td></tr>
-        ) : (
-          lineas.map((l, i) => (
-            <tr key={i} className="break-inside-avoid border-b border-osmos-line">
-              <td className="px-2 py-1.5 align-top text-osmos-muted">{i + 1}</td>
-              <td className="px-2 py-1.5 align-top">{l.descripcion}</td>
-              <td className={`px-2 py-1.5 align-top tabular-nums ${precios ? "text-right" : ""}`}>{formatoNumero(l.cantidad)}</td>
-              {precios ? (
-                <>
-                  <td className="px-2 py-1.5 whitespace-nowrap text-right align-top tabular-nums">{formatoDinero(l.precio)}</td>
-                  <td className="px-2 py-1.5 whitespace-nowrap text-right align-top tabular-nums">{Number(l.descuento_pct ?? 0) ? `${formatoNumero(l.descuento_pct)}%` : "—"}</td>
-                  <td className="px-2 py-1.5 whitespace-nowrap text-right align-top tabular-nums">{formatoDinero(l.itbis)}</td>
-                  <td className="px-2 py-1.5 whitespace-nowrap text-right align-top font-semibold tabular-nums">{formatoDinero(l.total)}</td>
-                </>
-              ) : (
-                <td className="px-2 py-1.5 align-top text-osmos-muted">{l.nota ?? ""}</td>
-              )}
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  );
-}
-
-function Totales({ filas, letras }: { filas: [string, unknown, boolean?][]; letras?: number }) {
-  return (
-    <div className="mt-3 flex items-start justify-between gap-6 break-inside-avoid">
-      <p className="max-w-[55%] text-[11px] italic text-osmos-muted">{letras !== undefined ? `Son: ${numeroEnLetras(letras)}` : ""}</p>
-      <dl className="grid min-w-[240px] grid-cols-2 gap-x-6 gap-y-0.5 text-[12px]">
-        {filas.map(([k, v, fuerte]) => (
-          <div key={k} className={`contents ${fuerte ? "text-[14px] font-bold text-osmos-navy" : ""}`}>
-            <dt className={fuerte ? "border-t border-osmos-navy pt-1" : "text-osmos-muted"}>{k}</dt>
-            <dd className={`text-right tabular-nums ${fuerte ? "border-t border-osmos-navy pt-1" : ""}`}>{formatoDinero(v)}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-function Notas({ titulo, texto }: { titulo: string; texto?: unknown }) {
-  if (!texto) return null;
-  return (
-    <section className="mt-4 break-inside-avoid text-[11px]">
-      <h2 className="mb-0.5 font-bold text-osmos-navy">{titulo}</h2>
-      <p className="whitespace-pre-line text-osmos-ink">{String(texto)}</p>
-    </section>
-  );
-}
-
-function Firmas({ izquierda, derecha }: { izquierda: string; derecha: string }) {
-  return (
-    <section className="mt-14 grid grid-cols-2 gap-16 break-inside-avoid text-center text-[11px]">
-      {[izquierda, derecha].map((t) => (
-        <div key={t} className="border-t border-osmos-ink pt-1">{t}</div>
-      ))}
-    </section>
-  );
-}
-
-function Sello({ texto }: { texto: string }) {
-  return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
-      <span className="rotate-[-24deg] whitespace-nowrap rounded-lg border-[6px] border-red-600/25 px-6 text-6xl font-bold uppercase text-red-600/25">{texto}</span>
-    </div>
-  );
 }
 
 export default function Imprimir() {
@@ -252,19 +108,23 @@ export default function Imprimir() {
   let contenido: React.ReactNode = null;
   let sello: string | null = null;
 
+  const vendedor = String((d.vendedores as Fila | null)?.nombre ?? "—");
+
   if (doc === "cotizacion") {
     const p = d.prospectos as Parte | null;
     const lineas = (d.cotizacion_lineas as Linea[]) ?? [];
     if (["rechazada", "vencida"].includes(String(d.estado))) sello = etiqueta(d.estado);
     contenido = (
       <>
-        <Membrete empresa={e} titulo="Cotización" numero={String(d.numero)} filas={[["Fecha", formatoFecha(d.fecha)], ["Válida hasta", formatoFecha(d.vence)], ["Vendedor", (d.vendedores as Fila | null)?.nombre as string ?? "—"]]} />
-        <Destinatario p={cliente ?? p} titulo={cliente ? "Cliente" : "Para"} />
+        <Membrete empresa={e} titulo="Cotización" subtitulo="Propuesta comercial" />
+        <Datos items={[["Cotización", String(d.numero)], ["Fecha", formatoFecha(d.fecha)], ["Válida hasta", formatoFecha(d.vence)], ["Vendedor", vendedor]]} />
+        <Destinatario p={cliente ?? p} titulo={cliente ? "Preparada para" : "Para"} />
         <TablaLineas lineas={lineas} precios />
-        <Totales filas={[["Subtotal", d.subtotal], ["Descuento", -Number(d.descuento ?? 0)], ["ITBIS", d.itbis], ["Total", d.total, true]]} letras={Number(d.total)} />
-        <Notas titulo="Notas" texto={d.notas} />
-        <Notas titulo="Condiciones" texto={e?.condiciones_cotizacion} />
-        <Firmas izquierda={`Preparado por · ${e?.nombre_comercial ?? "Osmos"}`} derecha="Aceptado por el cliente · Fecha" />
+        <Totales filas={[["Subtotal", d.subtotal], ["Descuento", -Number(d.descuento ?? 0)], ["ITBIS 18%", d.itbis], ["Total", d.total, true]]} letras={Number(d.total)}>
+          <Notas titulo="Notas" texto={d.notas} className="mt-3" />
+          <Notas titulo="Condiciones" texto={e?.condiciones_cotizacion} className="mt-3" />
+        </Totales>
+        <Firmas izquierda={`Preparado por · ${vendedor !== "—" ? vendedor : e?.nombre_comercial ?? "Osmos"}`} derecha="Aceptado por el cliente · Nombre y fecha" />
       </>
     );
   } else if (doc === "factura") {
@@ -274,34 +134,36 @@ export default function Imprimir() {
     if (d.estado === "anulada") sello = "Anulada";
     contenido = (
       <>
-        <Membrete
-          empresa={e}
-          titulo={TITULO_NCF[tipo] ?? "Factura"}
-          numero={d.ncf ? `NCF ${d.ncf}` : String(d.numero)}
-          filas={[
-            ["Factura", String(d.numero)],
-            ["Fecha de emisión", formatoFecha(d.fecha)],
-            ...(datos.extra.ncf_vence ? [["NCF válido hasta", formatoFecha(datos.extra.ncf_vence)] as [string, string]] : []),
-            ["Vence el pago", formatoFecha(d.vence)],
+        <Membrete empresa={e} titulo={tipo === "B15" ? "Comprobante" : "Factura"} subtitulo={TIPO_NCF[tipo]} />
+        <Datos items={[["NCF", String(d.ncf ?? "Pendiente")], ["Factura", String(d.numero)], ["Emisión", formatoFecha(d.fecha)], ["Vence el pago", formatoFecha(d.vence)]]} />
+        <Destinatario
+          p={cliente}
+          titulo="Facturado a"
+          extra={[
+            ["Condición", d.vence && d.vence !== d.fecha ? "Crédito" : "Contado"],
+            ["Vendedor", vendedor],
+            ...(datos.extra.ncf_vence ? [["NCF válido hasta", formatoFecha(datos.extra.ncf_vence)] as Par] : []),
+            ["Origen", etiqueta(d.origen)],
           ]}
         />
-        <Destinatario p={cliente} extra={[["Vendedor", String((d.vendedores as Fila | null)?.nombre ?? "—")], ["Origen", etiqueta(d.origen)], ["Condición", d.vence ? "Crédito" : "Contado"]]} />
         <TablaLineas lineas={lineas} precios />
-        <Totales filas={[["Subtotal", d.subtotal], ["Descuento", -Number(d.descuento ?? 0)], ["ITBIS 18%", d.itbis], ["Total a pagar", d.total, true]]} letras={Number(d.total)} />
-        {Number(d.saldo) > 0 && Number(d.saldo) < Number(d.total) ? <p className="mt-1 text-right text-[12px] font-semibold">Saldo pendiente: {formatoDinero(d.saldo)}</p> : null}
-        <Notas titulo="Notas" texto={d.notas} />
-        <Notas titulo="Forma de pago" texto={[e?.condiciones_factura, e?.instrucciones_pago].filter(Boolean).join("\n")} />
-        <Firmas izquierda="Despachado por" derecha="Recibido conforme · Fecha" />
+        <Totales filas={[["Subtotal", d.subtotal], ["Descuento", -Number(d.descuento ?? 0)], ["ITBIS 18%", d.itbis], ["Total a pagar", d.total, true]]} letras={Number(d.total)}>
+          {Number(d.saldo) > 0 && Number(d.saldo) < Number(d.total) ? <p className="mt-2 font-semibold">Saldo pendiente: {formatoDinero(d.saldo)}</p> : null}
+          <Notas titulo="Forma de pago" texto={[e?.instrucciones_pago, e?.condiciones_factura].filter(Boolean).join("\n")} className="mt-3" />
+          <Notas titulo="Notas" texto={d.notas} className="mt-3" />
+        </Totales>
+        <Firmas izquierda="Despachado por" derecha="Recibido conforme · Nombre y fecha" />
       </>
     );
   } else if (doc === "conduce") {
     const cot = d.cotizaciones as { numero: string; cotizacion_lineas: Linea[] } | null;
     contenido = (
       <>
-        <Membrete empresa={e} titulo="Conduce de entrega" numero={String(d.numero)} filas={[["Fecha", formatoFecha(d.fecha)], ["Entrega", formatoFecha(d.fecha_entrega)], ["Cotización", cot?.numero ?? "—"]]} />
-        <Destinatario p={cliente} titulo="Entregar a" extra={[["Técnico / chofer", String(datos.extra.tecnico ?? "—")], ["Vendedor", String((d.vendedores as Fila | null)?.nombre ?? "—")]]} />
+        <Membrete empresa={e} titulo="Conduce" subtitulo="Entrega de mercancía" />
+        <Datos items={[["Conduce", String(d.numero)], ["Fecha", formatoFecha(d.fecha)], ["Entrega", formatoFecha(d.fecha_entrega)], ["Cotización", cot?.numero ?? "—"]]} />
+        <Destinatario p={cliente} titulo="Entregar a" tituloExtra="Entrega" extra={[["Técnico / chofer", String(datos.extra.tecnico ?? "—")], ["Vendedor", vendedor]]} />
         <TablaLineas lineas={cot?.cotizacion_lineas ?? []} precios={false} />
-        <p className="mt-3 text-[11px] text-osmos-muted">El cliente declara recibir los artículos descritos en buen estado. Este documento no es un comprobante fiscal.</p>
+        <p className="mt-4 text-[11px] text-osmos-muted">El cliente declara recibir los artículos descritos en buen estado. Este documento no es un comprobante fiscal.</p>
         <Firmas izquierda="Entregado por" derecha="Recibido por · Cédula · Fecha" />
       </>
     );
@@ -313,19 +175,21 @@ export default function Imprimir() {
     });
     contenido = (
       <>
-        <Membrete empresa={e} titulo="Orden de servicio" numero={String(d.numero)} filas={[["Fecha", formatoFecha(d.fecha)], ["Tipo", etiqueta(d.tipo)], ["Iguala", String((d.igualas as Fila | null)?.codigo ?? "—")]]} />
+        <Membrete empresa={e} titulo="Orden de servicio" subtitulo={etiqueta(d.tipo)} />
+        <Datos items={[["Orden", String(d.numero)], ["Fecha", formatoFecha(d.fecha)], ["Iguala", String((d.igualas as Fila | null)?.codigo ?? "—")], ["Técnico", String(datos.extra.tecnico ?? "—")]]} />
         <Destinatario
           p={cliente}
+          tituloExtra="Equipo atendido"
           extra={[
-            ["Técnico", String(datos.extra.tecnico ?? "—")],
-            ["Equipo", eq ? `${eq.descripcion}` : "—"],
+            ["Equipo", eq ? String(eq.descripcion) : "—"],
             ["Serie", eq ? String(eq.serie) : "—"],
-            ...(eq?.ubicacion ? [["Ubicación", String(eq.ubicacion)] as [string, string]] : []),
+            ...(eq?.capacidad ? [["Capacidad", String(eq.capacidad)] as Par] : []),
+            ...(eq?.ubicacion ? [["Ubicación", String(eq.ubicacion)] as Par] : []),
           ]}
         />
-        <Notas titulo="Trabajo realizado" texto={d.trabajo_realizado ?? "—"} />
+        <Notas titulo="Trabajo realizado" texto={d.trabajo_realizado ?? "—"} className="mt-0" />
         <Notas titulo="Observaciones" texto={d.observaciones} />
-        <h2 className="mb-1 mt-4 text-[11px] font-bold text-osmos-navy">Insumos y repuestos utilizados</h2>
+        <h4 className="mb-1 mt-5 text-[10px] font-bold uppercase tracking-[0.12em] text-osmos-navy">Insumos y repuestos utilizados</h4>
         <TablaLineas lineas={insumos} precios={false} />
         <Firmas izquierda="Técnico de Osmos" derecha="Conforme el cliente · Nombre y fecha" />
       </>
@@ -336,40 +200,41 @@ export default function Imprimir() {
     if (d.estado === "anulado") sello = "Anulado";
     contenido = (
       <>
-        <Membrete empresa={e} titulo="Recibo de ingreso" numero={String(d.numero)} filas={[["Fecha", formatoFecha(d.fecha)], ["Forma de pago", etiqueta(d.forma_pago)], ["Referencia", String(d.referencia ?? "—")]]} />
-        <Destinatario p={cliente} titulo="Recibimos de" extra={banco ? [["Depositado en", `${banco.banco} · ${banco.numero}`]] : []} />
-        <p className="mb-3 rounded-md bg-osmos-bg px-3 py-2 text-[13px]">
-          La suma de <strong>{numeroEnLetras(Number(d.monto))}</strong> ({formatoDinero(d.monto)}) aplicada a:
+        <Membrete empresa={e} titulo="Recibo" subtitulo="De ingreso" />
+        <Datos items={[["Recibo", String(d.numero)], ["Fecha", formatoFecha(d.fecha)], ["Forma de pago", etiqueta(d.forma_pago)], ["Referencia", String(d.referencia ?? "—")]]} />
+        <Destinatario p={cliente} titulo="Recibimos de" tituloExtra="Depósito" extra={banco ? [["Cuenta", `${banco.banco} · ${banco.numero}`]] : []} />
+        <p className="mb-4 rounded bg-osmos-bg px-3.5 py-2.5 text-[13px]">
+          La suma de <strong>{numeroEnLetras(Number(d.monto))}</strong> ({formatoDinero(d.monto)}), aplicada a:
         </p>
         <table className="w-full border-collapse text-[12px]">
           <thead>
-            <tr className="bg-osmos-navy text-white">
+            <tr>
               {["Factura", "NCF", "Fecha", "Monto factura", "Aplicado", "Saldo actual"].map((h, i) => (
-                <th key={h} className={`px-2 py-1.5 text-left font-semibold ${i > 2 ? "text-right" : ""}`}>{h}</th>
+                <th key={h} className={`${TH} ${i > 2 ? "text-right" : ""}`}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {apl.length === 0 ? (
-              <tr><td colSpan={6} className="px-2 py-3 text-osmos-muted">Pago a cuenta, sin facturas aplicadas todavía.</td></tr>
+              <tr><td colSpan={6} className={`${TD} text-osmos-muted`}>Pago a cuenta, sin facturas aplicadas todavía.</td></tr>
             ) : (
               apl.map((a, i) => {
                 const f = a.facturas as Fila;
                 return (
-                  <tr key={i} className="border-b border-osmos-line">
-                    <td className="px-2 py-1.5">{String(f?.numero ?? "—")}</td>
-                    <td className="px-2 py-1.5">{String(f?.ncf ?? "—")}</td>
-                    <td className="px-2 py-1.5">{formatoFecha(f?.fecha)}</td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">{formatoDinero(f?.total)}</td>
-                    <td className="px-2 py-1.5 text-right font-semibold tabular-nums">{formatoDinero(a.monto)}</td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">{formatoDinero(f?.saldo)}</td>
+                  <tr key={i}>
+                    <td className={`${TD} font-semibold`}>{String(f?.numero ?? "—")}</td>
+                    <td className={TD}>{String(f?.ncf ?? "—")}</td>
+                    <td className={TD}>{formatoFecha(f?.fecha)}</td>
+                    <td className={`${TD} text-right tabular-nums`}>{formatoDinero(f?.total)}</td>
+                    <td className={`${TD} text-right font-bold tabular-nums`}>{formatoDinero(a.monto)}</td>
+                    <td className={`${TD} text-right tabular-nums`}>{formatoDinero(f?.saldo)}</td>
                   </tr>
                 );
               })
             )}
           </tbody>
         </table>
-        <Totales filas={[["Aplicado", d.aplicado], ["Total recibido", d.monto, true]]} />
+        <Totales filas={[["Aplicado a facturas", d.aplicado], ["Total recibido", d.monto, true]]} />
         <Firmas izquierda="Recibido por · Osmos" derecha="Entregado por el cliente" />
       </>
     );
@@ -395,13 +260,9 @@ export default function Imprimir() {
       {/* En el teléfono la hoja conserva su ancho y se desplaza de lado */}
       <div className="overflow-x-auto print:overflow-visible">
       {errorPdf ? <div className="print:hidden"><Aviso tono="bad">{errorPdf}</Aviso></div> : null}
-      <article ref={hoja} className="hoja relative mx-auto w-full min-w-[640px] max-w-[816px] bg-white p-10 shadow-sm print:min-w-0 print:max-w-none print:p-0 print:shadow-none">
-        {sello ? <Sello texto={sello} /> : null}
+      <Hoja hojaRef={hoja} sello={sello} empresa={e}>
         {contenido}
-        <footer className="mt-8 border-t border-osmos-line pt-2 text-center text-[10px] text-osmos-muted">
-          {e?.razon_social ?? "Osmos Tecnología del Agua"} · Documento generado el {formatoFecha(new Date().toLocaleDateString("sv-SE"))}
-        </footer>
-      </article>
+      </Hoja>
       </div>
     </>
   );
